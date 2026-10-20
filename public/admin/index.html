@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<!--
+  Panel de administración del portafolio.
+  Esta página solo contiene la estructura; toda la lógica (login, registro de la
+  primera cuenta y editor de secciones) vive en /js/admin.js y se comunica con
+  la API del servidor (/api/auth/* y /api/admin/*).
+  Tiene noindex para que los buscadores no la indexen.
+-->
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel de administración | Portafolio IT</title>
+  <meta name="description" content="Panel administrativo para editar las secciones del portafolio de IT Support.">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#0f172a">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script src="/js/tailwind-config.js"></script>
+  <link rel="stylesheet" href="/css/site.css">
+</head>
+<body class="bg-[#f8fafc] text-graphite-900 selection:bg-brand-100 selection:text-brand-900 min-h-screen">
+
+  <!-- ================= LOGIN / REGISTRO =================
+       Si no existe ningún usuario, admin.js lo convierte en "Crear cuenta de
+       administrador"; luego el registro se cierra y solo queda el login. -->
+  <div id="auth-view" class="hidden min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+    <div class="absolute inset-0 -z-10 bg-[radial-gradient(60%_50%_at_50%_0%,#dbeafe_0%,transparent_70%)]"></div>
+    <div class="w-full max-w-md fade-up">
+      <div class="flex items-center justify-center gap-3 mb-6">
+        <div class="w-11 h-11 rounded-xl bg-graphite-900 text-white flex items-center justify-center shadow-sm">
+          <span class="material-symbols-outlined">tune</span>
+        </div>
+        <div>
+          <div class="font-bold tracking-tight">Panel de Administración</div>
+          <div class="text-xs font-mono text-graphite-500">IT Support Portfolio</div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-graphite-200 shadow-sm p-6 sm:p-8">
+        <h1 id="auth-title" class="text-xl font-bold tracking-tight">Iniciar sesión</h1>
+        <p id="auth-sub" class="text-sm text-graphite-500 mt-1">Accede para editar el contenido de tu portafolio.</p>
+
+        <form id="auth-form" class="mt-6 space-y-4" novalidate>
+          <div>
+            <label for="auth-user" class="block text-xs font-mono text-graphite-600 mb-1">Usuario</label>
+            <input id="auth-user" type="text" autocomplete="username" required maxlength="32"
+                   class="w-full text-sm rounded-lg border-graphite-300 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 py-2.5 px-3">
+          </div>
+          <div>
+            <label for="auth-pass" class="block text-xs font-mono text-graphite-600 mb-1">Contraseña</label>
+            <div class="relative">
+              <input id="auth-pass" type="password" required maxlength="200"
+                     class="w-full text-sm rounded-lg border-graphite-300 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 py-2.5 pl-3 pr-10">
+              <button type="button" id="toggle-pass" aria-label="Mostrar u ocultar contraseña"
+                      class="absolute inset-y-0 right-0 px-3 text-graphite-400 hover:text-graphite-700">
+                <span class="material-symbols-outlined text-[20px]">visibility</span>
+              </button>
+            </div>
+            <p id="auth-hint" class="hidden text-[11px] text-graphite-500 mt-1">Mínimo 8 caracteres.</p>
+          </div>
+          <div id="auth-confirm-wrap" class="hidden">
+            <label for="auth-pass2" class="block text-xs font-mono text-graphite-600 mb-1">Confirmar contraseña</label>
+            <input id="auth-pass2" type="password" autocomplete="new-password" maxlength="200"
+                   class="w-full text-sm rounded-lg border-graphite-300 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 py-2.5 px-3">
+          </div>
+          <div id="auth-error" role="alert" class="hidden p-3 rounded-lg bg-red-50 border border-red-200 text-red-800 text-xs flex items-start gap-2">
+            <span class="material-symbols-outlined text-[16px]">error</span><span></span>
+          </div>
+          <button id="auth-submit" type="submit"
+                  class="w-full py-2.5 rounded-lg bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white font-medium text-sm shadow-sm transition-all">
+            Entrar
+          </button>
+        </form>
+      </div>
+      <p class="text-center mt-5 text-xs font-mono"><a href="/" class="text-graphite-500 hover:text-brand-600">← Volver al portafolio</a></p>
+    </div>
+  </div>
+
+  <!-- ================= PANEL =================
+       Cabecera + navegación de secciones (#section-nav) + contenido (#panel).
+       Se muestra solo con la sesión iniciada. -->
+  <div id="app-view" class="hidden min-h-screen flex flex-col">
+    <header class="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-graphite-200">
+      <div class="max-w-7xl mx-auto px-4 sm:px-8 h-14 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div class="w-8 h-8 shrink-0 rounded-lg bg-brand-600 text-white flex items-center justify-center">
+            <span class="material-symbols-outlined text-[18px]">tune</span>
+          </div>
+          <div class="min-w-0">
+            <div class="font-bold text-sm tracking-tight truncate">Panel de Administración</div>
+            <div class="text-[11px] text-graphite-500 font-mono hidden sm:block">Los cambios guardados se reflejan en el sitio público</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <a href="/" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-graphite-200 bg-white hover:bg-graphite-50 text-graphite-700 font-mono text-xs">
+            <span class="material-symbols-outlined text-[16px]">open_in_new</span><span class="hidden sm:inline">Ver sitio</span>
+          </a>
+          <span id="user-chip" class="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-graphite-100 text-graphite-700 font-mono text-xs">
+            <span class="material-symbols-outlined text-[16px]">person</span><span></span>
+          </span>
+          <button id="logout-btn" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-graphite-900 hover:bg-graphite-800 text-white font-mono text-xs">
+            <span class="material-symbols-outlined text-[16px]">logout</span><span class="hidden sm:inline">Salir</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <div class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-8 py-5 sm:py-8 lg:grid lg:grid-cols-[240px_1fr] lg:gap-8">
+      <!-- Navegación de secciones -->
+      <nav aria-label="Secciones" class="lg:sticky lg:top-20 lg:self-start mb-5 lg:mb-0">
+        <div id="section-nav" class="flex lg:flex-col gap-1.5 overflow-x-auto custom-scroll pb-2 lg:pb-0 -mx-4 px-4 sm:-mx-8 sm:px-8 lg:mx-0 lg:px-0"></div>
+      </nav>
+
+      <!-- Contenido -->
+      <main id="panel" class="min-w-0 pb-24"></main>
+    </div>
+  </div>
+
+  <!-- Contenedor de avisos temporales (guardado, errores, etc.) -->
+  <div id="toasts" class="fixed bottom-20 right-4 left-4 sm:left-auto z-50 flex flex-col gap-2 items-end pointer-events-none"></div>
+
+  <script src="/js/admin.js"></script>
+</body>
+</html>

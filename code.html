@@ -1,0 +1,1061 @@
+<!DOCTYPE html><html class="scroll-smooth" lang="es" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Alex Rivera | IT Operations &amp; Systems Administrator</title>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              200: '#bfdbfe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+              900: '#1e3a8a'
+            },
+            itblue: '#0284c7',
+            graphite: {
+              50: '#f8fafc',
+              100: '#f1f5f9',
+              200: '#e2e8f0',
+              300: '#cbd5e1',
+              400: '#94a3b8',
+              500: '#64748b',
+              600: '#475569',
+              700: '#334155',
+              800: '#1e293b',
+              900: '#0f172a',
+              950: '#020617'
+            }
+          },
+          fontFamily: {
+            sans: ['Geist', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      font-family: 'Geist', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+<body class="bg-[#f8fafc] text-graphite-900 selection:bg-brand-100 selection:text-brand-900">
+<!-- Micro Status Topbar -->
+<aside class="w-full bg-white border-b border-graphite-200/80 px-4 sm:px-8 py-1.5 text-xs font-mono text-graphite-500">
+
+</aside>
+<!-- Sticky Minimalist Header -->
+<header class="sticky top-0 z-40 w-full bg-white/90 backdrop-blur-md border-b border-graphite-200">
+<div class="max-w-7xl mx-auto px-4 sm:px-8 h-16 flex items-center justify-between gap-4">
+<!-- Brand & Title -->
+<a class="flex items-center gap-3 group" href="#">
+<div class="w-9 h-9 rounded-lg bg-graphite-900 flex items-center justify-center text-white font-mono font-bold text-sm shadow-sm group-hover:bg-brand-600 transition-colors">
+          AR
+        </div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-bold text-sm tracking-tight text-graphite-900 group-hover:text-brand-600 transition-colors" id="header-name">Alex Rivera</span>
+<span class="text-graphite-300">/</span>
+<span class="text-xs font-mono text-graphite-500 uppercase tracking-wider" id="header-title">IT Systems Admin</span>
+</div>
+<span class="text-[11px] text-emerald-600 font-mono flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Open to Work · Disponibilidad Inmediata
+          </span>
+</div>
+</a>
+<!-- Clean Navigation Links -->
+<nav class="hidden lg:flex items-center gap-1 text-sm font-medium text-graphite-600">
+<a class="px-3 py-1.5 rounded-md hover:text-graphite-900 hover:bg-graphite-100 transition-all" href="#perfil">Perfil</a>
+<a class="px-3 py-1.5 rounded-md hover:text-graphite-900 hover:bg-graphite-100 transition-all" href="#experiencia">Experiencia</a>
+<a class="px-3 py-1.5 rounded-md hover:text-graphite-900 hover:bg-graphite-100 transition-all" href="#metricas">Métricas</a>
+
+
+<a class="px-3 py-1.5 rounded-md hover:text-graphite-900 hover:bg-graphite-100 transition-all" href="#contacto">Contacto</a>
+</nav>
+<!-- Action Actions & Admin Drawer Trigger -->
+<div class="flex items-center gap-2.5">
+<button class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-graphite-200 bg-white hover:bg-graphite-50 text-graphite-700 font-mono text-xs transition-colors" onclick="window.print()">
+<span class="material-symbols-outlined text-[16px]">download</span>
+<span class="">CV (PDF)</span>
+</button>
+<a class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium text-xs shadow-sm hover:shadow transition-all" href="#contacto">
+<span class="material-symbols-outlined text-[16px]">mail</span>
+<span class="">Contactar</span>
+</a>
+<!-- Admin Mode Toggle Button -->
+<button aria-label="Abrir panel administrativo" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-graphite-100 hover:bg-brand-50 hover:text-brand-600 border border-graphite-200/80 text-graphite-700 font-mono text-xs font-medium transition-all group" id="open-admin-btn" type="button">
+<span class="material-symbols-outlined text-[16px] text-graphite-500 group-hover:text-brand-600 group-hover:rotate-45 transition-transform">tune</span>
+<span class="hidden md:inline">Modo Admin</span>
+</button>
+</div>
+</div>
+</header>
+<main class="max-w-7xl mx-auto px-4 sm:px-8 py-8 sm:py-12 space-y-16">
+<!-- Hero Section: Modern, Spacious, Ultra-clean -->
+<section class="relative" id="perfil">
+<div class="bg-white rounded-2xl border border-graphite-200/90 p-6 sm:p-10 shadow-sm">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
+<!-- Left: Profile Summary -->
+<div class="lg:col-span-7 space-y-5">
+<div class="flex flex-wrap items-center gap-2 font-mono text-xs">
+<span class="px-2.5 py-1 rounded bg-brand-50 text-brand-700 border border-brand-200/60 font-medium">
+                TIER 2/3 SUPPORT &amp; INFRASTRUCTURE
+              </span>
+<span class="px-2.5 py-1 rounded bg-graphite-100 text-graphite-600 border border-graphite-200">
+                5+ AÑOS DE EXPERIENCIA
+              </span>
+
+</div>
+<h1 class="text-3xl sm:text-4xl lg:text-[42px] font-bold tracking-tight text-graphite-950 leading-[1.15]" id="profile-heading">
+              Senior IT Support Engineer &amp; Systems Administrator
+            </h1>
+<p class="text-base sm:text-lg text-graphite-600 leading-relaxed font-normal" id="profile-bio">
+              Garantizo la continuidad y resiliencia de infraestructuras empresariales. Especialista en soporte multinivel, gobernanza de identidades (Entra ID, AD, Okta), gestión de flotas con Microsoft Intune, automatización mediante PowerShell y contención proactiva de incidentes.
+            </p>
+<!-- Metadata Chips -->
+<div class="flex flex-wrap items-center gap-2 pt-1 font-mono text-xs text-graphite-600">
+<div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-graphite-50 border border-graphite-200/70">
+<span class="material-symbols-outlined text-[16px] text-brand-600">place</span>
+<span class="">Híbrido / Remoto Global</span>
+</div>
+<div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-graphite-50 border border-graphite-200/70">
+<span class="material-symbols-outlined text-[16px] text-brand-600">verified</span>
+<span class="">CompTIA Sec+ · Net+ · MD-102 · ITIL v4</span>
+</div>
+<div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-graphite-50 border border-graphite-200/70">
+<span class="material-symbols-outlined text-[16px] text-brand-600">translate</span>
+<span class="">Español (Nativo) · Inglés (C1 Fluido)</span>
+</div>
+</div>
+<div class="flex flex-wrap items-center gap-3 pt-2">
+<a class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium text-sm transition-all shadow-sm" href="#contacto">
+<span class="">Agendar Entrevista</span>
+<span class="material-symbols-outlined text-[18px]">calendar_today</span>
+</a>
+<a class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-graphite-100 hover:bg-graphite-200/80 text-graphite-800 font-medium text-sm transition-all" href="#incidentes">
+<span class="">Ver Bitácora de Casos</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</a>
+</div>
+</div>
+<!-- Right: Real-time Active Employment Clock & Live Ops Card -->
+<div class="lg:col-span-5 flex flex-col gap-4">
+<!-- Real-time Active Employment Live Counter -->
+<div class="rounded-xl border border-graphite-200 bg-graphite-50/70 p-6 shadow-sm">
+<div class="flex items-center justify-between pb-4 border-b border-graphite-200/80">
+<div class="flex items-center gap-2">
+<span class="relative flex h-2.5 w-2.5">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+</span>
+<span class="text-xs font-mono font-semibold uppercase tracking-wider text-emerald-700">En Funciones Activas</span>
+</div>
+<span class="text-[11px] font-mono text-graphite-400 uppercase">Tiempo Real</span>
+</div>
+<div class="py-4">
+<div class="text-xs font-mono text-graphite-500 uppercase tracking-wider">Puesto Actual</div>
+<div class="font-bold text-base text-graphite-900 mt-0.5" id="current-role-title">Lead IT Systems Administrator</div>
+<div class="text-xs text-graphite-500 flex items-center gap-1.5 mt-0.5">
+<span class="font-medium text-graphite-700" id="current-company-title">CloudScale Solutions</span>
+<span class="text-graphite-300">·</span>
+<span id="employment-start-text" class="">Desde el 15 Ene 2022</span>
+</div>
+</div>
+<!-- Live Counter Grid Display -->
+<div class="grid grid-cols-4 gap-2 pt-2 text-center font-mono">
+<div class="bg-white rounded-lg p-2.5 border border-graphite-200/80 shadow-xs">
+<div class="text-xl sm:text-2xl font-bold text-brand-600" id="clock-years">0</div>
+<div class="text-[10px] uppercase text-graphite-500 tracking-wider font-sans font-medium">Años</div>
+</div>
+<div class="bg-white rounded-lg p-2.5 border border-graphite-200/80 shadow-xs">
+<div class="text-xl sm:text-2xl font-bold text-brand-600" id="clock-months">0</div>
+<div class="text-[10px] uppercase text-graphite-500 tracking-wider font-sans font-medium">Meses</div>
+</div>
+<div class="bg-white rounded-lg p-2.5 border border-graphite-200/80 shadow-xs">
+<div class="text-xl sm:text-2xl font-bold text-brand-600" id="clock-days">0</div>
+<div class="text-[10px] uppercase text-graphite-500 tracking-wider font-sans font-medium">Días</div>
+</div>
+<div class="bg-white rounded-lg p-2.5 border border-graphite-200/80 shadow-xs">
+<div class="text-xl sm:text-2xl font-bold text-brand-600" id="clock-hours">00</div>
+<div class="text-[10px] uppercase text-graphite-500 tracking-wider font-sans font-medium">Horas</div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-2 mt-2 text-center font-mono">
+<div class="bg-white rounded-lg py-2 px-3 border border-graphite-200/80 flex items-center justify-between">
+<span class="text-[11px] text-graphite-500 uppercase font-sans">Minutos:</span>
+<span class="text-base font-bold text-graphite-900" id="clock-minutes">00</span>
+</div>
+<div class="bg-white rounded-lg py-2 px-3 border border-graphite-200/80 flex items-center justify-between">
+<span class="text-[11px] text-graphite-500 uppercase font-sans">Segundos:</span>
+<span class="text-base font-bold text-emerald-600" id="clock-seconds">00</span>
+</div>
+</div>
+<div class="mt-4 pt-3 border-t border-graphite-200/70 flex items-center justify-between text-xs font-mono text-graphite-500">
+<span class="">Total de Semanas: <strong class="text-graphite-800" id="clock-weeks">0</strong></span>
+<span class="text-[11px] text-brand-600 bg-brand-50 px-2 py-0.5 rounded font-medium">Servicio Ininterrumpido</span>
+</div>
+</div>
+<!-- Quick Pulse Mini Card -->
+<div class="p-4 rounded-xl border border-graphite-200 bg-white flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-brand-50 border border-brand-100 flex items-center justify-center text-brand-600">
+<span class="material-symbols-outlined text-[20px]">speed</span>
+</div>
+<div>
+<div class="text-xs font-mono text-graphite-500 uppercase">MTTR Promedio Global</div>
+<div class="text-base font-bold text-graphite-900" id="card-mttr-display">42 Minutos</div>
+</div>
+</div>
+<div class="text-right">
+<span class="text-xs font-mono px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold">Tier 1-3 Lead</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Operational KPI Metrics (Clean, Spacious, Editable) -->
+<section class="space-y-6" id="metricas">
+<div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pb-2 border-b border-graphite-200">
+<div>
+
+<h2 class="text-2xl font-bold tracking-tight text-graphite-900 mt-1">Métricas de Operaciones IT</h2>
+</div>
+<div class="text-xs font-mono text-graphite-500 flex items-center gap-2">
+
+<button class="text-brand-600 hover:underline flex items-center gap-1" onclick="openAdminModal('kpi-tab')">
+<span class="material-symbols-outlined text-[14px]">edit</span> Editar valores
+          </button>
+</div>
+</div>
+<!-- 4 High Precision Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+<!-- KPI 1 -->
+<div class="bg-white p-6 rounded-xl border border-graphite-200 shadow-xs hover:border-brand-300 transition-colors">
+<div class="flex items-center justify-between text-graphite-500 mb-3">
+<span class="text-xs font-mono uppercase tracking-wider">Tickets Resueltos</span>
+<span class="w-8 h-8 rounded-lg bg-graphite-100 flex items-center justify-center text-graphite-700">
+<span class="material-symbols-outlined text-[18px]">confirmation_number</span>
+</span>
+</div>
+<div class="text-3xl font-mono font-bold tracking-tight text-graphite-900" id="stat-tickets">4,820+</div>
+<div class="mt-2 flex items-center gap-1.5 text-xs text-emerald-600 font-medium">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+<span class="">Casos documentados y cerrados</span>
+</div>
+</div>
+<!-- KPI 2 -->
+<div class="bg-white p-6 rounded-xl border border-graphite-200 shadow-xs hover:border-brand-300 transition-colors">
+<div class="flex items-center justify-between text-graphite-500 mb-3">
+<span class="text-xs font-mono uppercase tracking-wider">Cumplimiento SLA</span>
+<span class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+</span>
+</div>
+<div class="text-3xl font-mono font-bold tracking-tight text-emerald-600" id="stat-sla">99.2%</div>
+<div class="mt-2 flex items-center gap-1.5 text-xs text-graphite-500">
+<span class="">Resolución dentro del umbral pactado</span>
+</div>
+</div>
+<!-- KPI 3 -->
+<div class="bg-white p-6 rounded-xl border border-graphite-200 shadow-xs hover:border-brand-300 transition-colors">
+<div class="flex items-center justify-between text-graphite-500 mb-3">
+<span class="text-xs font-mono uppercase tracking-wider">Índice CSAT</span>
+<span class="w-8 h-8 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">thumb_up</span>
+</span>
+</div>
+<div class="text-3xl font-mono font-bold tracking-tight text-brand-600" id="stat-csat">98.4%</div>
+<div class="mt-2 flex items-center gap-1.5 text-xs text-graphite-500">
+<span class="">Satisfacción de usuarios finales</span>
+</div>
+</div>
+<!-- KPI 4 -->
+<div class="bg-white p-6 rounded-xl border border-graphite-200 shadow-xs hover:border-brand-300 transition-colors">
+<div class="flex items-center justify-between text-graphite-500 mb-3">
+<span class="text-xs font-mono uppercase tracking-wider">Tiempo de Respuesta</span>
+<span class="w-8 h-8 rounded-lg bg-graphite-100 text-graphite-700 flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">timer</span>
+</span>
+</div>
+<div class="text-3xl font-mono font-bold tracking-tight text-graphite-900" id="stat-response">7.4 min</div>
+<div class="mt-2 flex items-center gap-1.5 text-xs text-graphite-500">
+<span class="">Media inicial (Estándar Tier 1: 15m)</span>
+</div>
+</div>
+</div>
+<!-- Incident Category Distribution Clean Bar & Cards -->
+<div class="bg-white rounded-xl border border-graphite-200 p-6 space-y-6">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+<div>
+<h3 class="font-bold text-base text-graphite-900">Distribución de Boletos por Especialidad Técnica</h3>
+<p class="text-xs text-graphite-500">Categorización basada en el histórico de incidencias atendidas</p>
+</div>
+<span class="text-xs font-mono text-brand-600 bg-brand-50 px-2.5 py-1 rounded border border-brand-100">100% Auditado</span>
+</div>
+<!-- Interactive Progress Bar Segmented -->
+<div class="w-full bg-graphite-100 h-3 rounded-full overflow-hidden flex" id="categories-bar">
+<div class="bg-brand-600 h-full transition-all" style="width: 24%" title="Hardware (24%)"></div>
+<div class="bg-itblue h-full transition-all" style="width: 20%" title="Redes &amp; VPN (20%)"></div>
+<div class="bg-emerald-500 h-full transition-all" style="width: 18%" title="IAM &amp; Directorio (18%)"></div>
+<div class="bg-indigo-500 h-full transition-all" style="width: 16%" title="Sistemas Operativos (16%)"></div>
+<div class="bg-rose-500 h-full transition-all" style="width: 11%" title="Seguridad (11%)"></div>
+<div class="bg-amber-500 h-full transition-all" style="width: 11%" title="Cloud &amp; Servidores (11%)"></div>
+</div>
+<!-- Category Grid Container (Managed by JS for live admin edits) -->
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3" id="categories-grid">
+<div class="p-3 rounded-lg bg-graphite-50 border border-graphite-200/80">
+<div class="flex items-center gap-1.5 mb-1">
+<span class="w-2.5 h-2.5 rounded-full bg-brand-600"></span>
+<span class="text-xs font-mono text-graphite-700 font-medium">Hardware</span>
+</div>
+<div class="text-lg font-mono font-bold text-graphite-900">24%</div>
+<div class="text-[11px] text-graphite-500">1,150 tickets</div>
+</div>
+<div class="p-3 rounded-lg bg-graphite-50 border border-graphite-200/80">
+<div class="flex items-center gap-1.5 mb-1">
+<span class="w-2.5 h-2.5 rounded-full bg-itblue"></span>
+<span class="text-xs font-mono text-graphite-700 font-medium">Redes / VPN</span>
+</div>
+<div class="text-lg font-mono font-bold text-graphite-900">20%</div>
+<div class="text-[11px] text-graphite-500">980 tickets</div>
+</div>
+<div class="p-3 rounded-lg bg-graphite-50 border border-graphite-200/80">
+<div class="flex items-center gap-1.5 mb-1">
+<span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+<span class="text-xs font-mono text-graphite-700 font-medium">IAM / Accesos</span>
+</div>
+<div class="text-lg font-mono font-bold text-graphite-900">18%</div>
+<div class="text-[11px] text-graphite-500">860 tickets</div>
+</div>
+<div class="p-3 rounded-lg bg-graphite-50 border border-graphite-200/80">
+<div class="flex items-center gap-1.5 mb-1">
+<span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+<span class="text-xs font-mono text-graphite-700 font-medium">OS &amp; MDM</span>
+</div>
+<div class="text-lg font-mono font-bold text-graphite-900">16%</div>
+<div class="text-[11px] text-graphite-500">780 tickets</div>
+</div>
+<div class="p-3 rounded-lg bg-graphite-50 border border-graphite-200/80">
+<div class="flex items-center gap-1.5 mb-1">
+<span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+<span class="text-xs font-mono text-graphite-700 font-medium">Ciberseguridad</span>
+</div>
+<div class="text-lg font-mono font-bold text-graphite-900">11%</div>
+<div class="text-[11px] text-graphite-500">540 tickets</div>
+</div>
+<div class="p-3 rounded-lg bg-graphite-50 border border-graphite-200/80">
+<div class="flex items-center gap-1.5 mb-1">
+<span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+<span class="text-xs font-mono text-graphite-700 font-medium">Cloud &amp; Servers</span>
+</div>
+<div class="text-lg font-mono font-bold text-graphite-900">11%</div>
+<div class="text-[11px] text-graphite-500">510 tickets</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Professional Experience Timeline (Featuring Live Employment Timer) -->
+<section class="space-y-6" id="experiencia">
+<div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pb-2 border-b border-graphite-200">
+<div>
+
+<h2 class="text-2xl font-bold tracking-tight text-graphite-900 mt-1">Experiencia Profesional</h2>
+</div>
+
+</div>
+<div class="space-y-4" id="experience-list">
+<!-- Experience 1: Current Active Job (Highlighted & Enhanced) -->
+<div class="bg-white rounded-xl border-2 border-brand-200 p-6 sm:p-8 shadow-xs relative overflow-hidden">
+<div class="absolute top-0 right-0 px-3 py-1 bg-brand-50 border-b border-l border-brand-200 text-brand-700 text-xs font-mono font-semibold rounded-bl-lg flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> PUESTO ACTUAL
+          </div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<div class="lg:col-span-4 space-y-2">
+<div class="text-xs font-mono text-brand-600 font-semibold">2022 — PRESENTE</div>
+<h3 class="text-xl font-bold text-graphite-900">Lead IT Systems Administrator</h3>
+<div class="text-sm font-medium text-graphite-700">CloudScale Solutions</div>
+<div class="text-xs text-graphite-500 font-mono">Modalidad Híbrida · 850+ Usuarios Globales</div>
+<!-- Mini live ticker inline -->
+<div class="mt-4 p-3 bg-brand-50/50 rounded-lg border border-brand-100 text-xs font-mono text-brand-900">
+<div class="text-[11px] text-brand-700 uppercase font-semibold">Tiempo transcurrido en el cargo:</div>
+<div class="mt-1 font-bold text-graphite-900" id="experience-inline-counter">Calculando...</div>
+</div>
+</div>
+<div class="lg:col-span-8 space-y-4">
+<p class="text-sm sm:text-base text-graphite-700 leading-relaxed">
+                Liderazgo técnico del equipo de soporte de segundo y tercer nivel. Gestión integral de infraestructura Microsoft 365, administración de dispositivos mediante Microsoft Intune y arquitectura de identidades en Entra ID para equipos distribuidos en 4 países.
+              </p>
+<div class="space-y-2 text-sm text-graphite-600">
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-brand-600 text-base mt-0.5">check_circle</span>
+<span class="">Supervisión y cierre de más de <strong>1,800 boletos críticos</strong> con un cumplimiento del 99.6% de SLA.</span>
+</div>
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-brand-600 text-base mt-0.5">check_circle</span>
+<span class="">Diseño y aplicación de políticas Zero-Trust y Conditional Access, reduciendo inicios de sesión sospechosos en un 64%.</span>
+</div>
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-brand-600 text-base mt-0.5">check_circle</span>
+<span class="">Automatización de tareas de onboarding y offboarding con PowerShell, pasando de 45 a solo 4 minutos por cuenta.</span>
+</div>
+</div>
+<!-- Tech Pills -->
+<div class="flex flex-wrap gap-1.5 pt-2 font-mono text-xs text-graphite-600">
+<span class="px-2 py-0.5 rounded bg-graphite-100">Microsoft Intune</span>
+<span class="px-2 py-0.5 rounded bg-graphite-100">Entra ID (Azure AD)</span>
+<span class="px-2 py-0.5 rounded bg-graphite-100">PowerShell Scripting</span>
+<span class="px-2 py-0.5 rounded bg-graphite-100">CrowdStrike Falcon</span>
+<span class="px-2 py-0.5 rounded bg-graphite-100">Jira Service Management</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Experience 2 -->
+<div class="bg-white rounded-xl border border-graphite-200 p-6 sm:p-8 shadow-xs hover:border-graphite-300 transition-colors">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<div class="lg:col-span-4 space-y-1">
+<div class="text-xs font-mono text-graphite-500 font-semibold">2020 — 2022</div>
+<h3 class="text-lg font-bold text-graphite-900">IT Support Engineer Tier II</h3>
+<div class="text-sm font-medium text-graphite-700">Nexus Global Logistics</div>
+<div class="text-xs text-graphite-500 font-mono">Presencial / Remoto · 500 Usuarios</div>
+</div>
+<div class="lg:col-span-8 space-y-3">
+<p class="text-sm text-graphite-700 leading-relaxed">
+                Administración de redes locales corporativas, servidores Windows Server (2016/2019) y soporte técnico continuo a almacenes y centros logísticos operativos 24/7.
+              </p>
+<div class="space-y-1.5 text-sm text-graphite-600">
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-graphite-400 text-base mt-0.5">check_circle</span>
+<span class="">Resolución de 2,100+ casos en ServiceNow con satisfacción promedio de 4.9/5.0.</span>
+</div>
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-graphite-400 text-base mt-0.5">check_circle</span>
+<span class="">Mantenimiento y contingencia de túneles VPN IPsec Cisco y conmutación por error en routers SD-WAN.</span>
+</div>
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-graphite-400 text-base mt-0.5">check_circle</span>
+<span class="">Auditorías de respaldos mensuales con Veeam Backup &amp; Replication con simulacros de Disaster Recovery exitosos.</span>
+</div>
+</div>
+<div class="flex flex-wrap gap-1.5 pt-1 font-mono text-xs text-graphite-600">
+<span class="px-2 py-0.5 rounded bg-graphite-100">Windows Server</span>
+<span class="px-2 py-0.5 rounded bg-graphite-100">Cisco VPN</span>
+<span class="px-2 py-0.5 rounded bg-graphite-100">Veeam Backup</span>
+<span class="px-2 py-0.5 rounded bg-graphite-100">ServiceNow</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Experience 3 -->
+<div class="bg-white rounded-xl border border-graphite-200 p-6 sm:p-8 shadow-xs hover:border-graphite-300 transition-colors">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<div class="lg:col-span-4 space-y-1">
+<div class="text-xs font-mono text-graphite-500 font-semibold">2018 — 2020</div>
+<h3 class="text-lg font-bold text-graphite-900">Junior IT Helpdesk Analyst</h3>
+<div class="text-sm font-medium text-graphite-700">TechServe BPO</div>
+<div class="text-xs text-graphite-500 font-mono">Call Center On-site · 300+ Agentes</div>
+</div>
+<div class="lg:col-span-8 space-y-3">
+<p class="text-sm text-graphite-700 leading-relaxed">
+                Primer punto de contacto (Tier 1) para hardware, telefonía VoIP SIP, aprovisionamiento masivo de estaciones de trabajo e incidencias de software de agentes.
+              </p>
+<div class="space-y-1.5 text-sm text-graphite-600">
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-graphite-400 text-base mt-0.5">check_circle</span>
+<span class="">Resolución de 920+ boletos de primer contacto con un MTTR menor a 25 minutos.</span>
+</div>
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-graphite-400 text-base mt-0.5">check_circle</span>
+<span class="">Clonación e imagen masiva de estaciones de trabajo con Symantec Ghost / Acronis y configuración de VoIP.</span>
+</div>
+</div>
+<div class="flex flex-wrap gap-1.5 pt-1 font-mono text-xs text-graphite-600">
+<span class="px-2 py-0.5 rounded bg-graphite-100">Active Directory</span>
+<span class="px-2 py-0.5 rounded bg-graphite-100">VoIP SIP</span>
+<span class="px-2 py-0.5 rounded bg-graphite-100">Hardware Dell/HP</span>
+<span class="px-2 py-0.5 rounded bg-graphite-100">Zendesk</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Incident Remediation Case Studies (Ultra-Clean Modern Table) -->
+
+<!-- Technical Stack & Tooling Matrix (Minimalist 3 Columns) -->
+
+<!-- Certifications & Education (Clean split) -->
+<section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Certifications -->
+<div class="bg-white rounded-xl border border-graphite-200 p-6 space-y-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-brand-600">workspace_premium</span>
+<h3 class="font-bold text-base text-graphite-900">Certificaciones Oficiales Activas</h3>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+<div class="p-3 rounded-lg bg-graphite-50 border border-graphite-200/70">
+<span class="font-mono text-brand-600 font-semibold">COMPTIA</span>
+<div class="font-bold text-graphite-900 mt-0.5">Security+ (SY0-601)</div>
+<div class="font-mono text-[11px] text-graphite-500 mt-1">ID: COMP00102148</div>
+</div>
+<div class="p-3 rounded-lg bg-graphite-50 border border-graphite-200/70">
+<span class="font-mono text-brand-600 font-semibold">COMPTIA</span>
+<div class="font-bold text-graphite-900 mt-0.5">Network+ (N10-008)</div>
+<div class="font-mono text-[11px] text-graphite-500 mt-1">ID: COMP00102149</div>
+</div>
+<div class="p-3 rounded-lg bg-graphite-50 border border-graphite-200/70">
+<span class="font-mono text-itblue font-semibold">MICROSOFT</span>
+<div class="font-bold text-graphite-900 mt-0.5">Endpoint Admin (MD-102)</div>
+<div class="font-mono text-[11px] text-graphite-500 mt-1">Certified Associate</div>
+</div>
+<div class="p-3 rounded-lg bg-graphite-50 border border-graphite-200/70">
+<span class="font-mono text-emerald-600 font-semibold">AXELOS</span>
+<div class="font-bold text-graphite-900 mt-0.5">ITIL® 4 Foundation</div>
+<div class="font-mono text-[11px] text-graphite-500 mt-1">Gestión de Servicios IT</div>
+</div>
+</div>
+</div>
+<!-- Education & Languages -->
+<div class="bg-white rounded-xl border border-graphite-200 p-6 space-y-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-brand-600">school</span>
+<h3 class="font-bold text-base text-graphite-900">Formación Académica &amp; Idiomas</h3>
+</div>
+<div class="p-3.5 rounded-lg bg-graphite-50 border border-graphite-200/70 space-y-1">
+<div class="text-xs font-mono text-brand-600 font-semibold">GRADO UNIVERSITARIO</div>
+<div class="font-bold text-sm text-graphite-900">Ingeniería en Sistemas Computacionales / Telemática</div>
+<div class="text-xs text-graphite-600">Universidad Politécnica · Titulado con Mención de Honor</div>
+</div>
+<div class="p-3.5 rounded-lg bg-graphite-50 border border-graphite-200/70 space-y-2">
+<div class="text-xs font-mono text-graphite-500 uppercase tracking-wider">Competencia Lingüística</div>
+<div class="flex items-center justify-between text-xs">
+<span class="text-graphite-800 font-medium">Inglés Técnico &amp; Conversacional</span>
+<span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-mono font-semibold border border-emerald-200">C1 Fluido (EF SET 72/100)</span>
+</div>
+<div class="flex items-center justify-between text-xs">
+<span class="text-graphite-800 font-medium">Español</span>
+<span class="px-2 py-0.5 rounded bg-graphite-200 text-graphite-800 font-mono font-semibold">Nativo</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Direct Clean Contact Section -->
+<section class="bg-white rounded-2xl border border-graphite-200 p-8 sm:p-12 shadow-sm" id="contacto">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+<div class="lg:col-span-7 space-y-4">
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 font-mono text-xs font-medium border border-emerald-200">
+<span class="w-2 h-2 rounded-full bg-emerald-500"></span> Proceso de Contratación Abierto
+          </div>
+<h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-graphite-950">
+            ¿Buscas un profesional para liderar tus operaciones de soporte e infraestructura?
+          </h2>
+<p class="text-graphite-600 text-sm sm:text-base leading-relaxed">
+            Disponible para roles de <strong>Lead Systems Administrator, Senior IT Support Specialist o Infrastructure Operations Analyst</strong>. Enfoque implacable en resolución definitiva, SLA y cultura proactiva.
+          </p>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 font-mono text-xs">
+<a class="p-3 rounded-lg border border-graphite-200 bg-graphite-50 hover:bg-brand-50 hover:border-brand-200 transition-colors flex items-center gap-2 text-graphite-700" href="mailto:alex.rivera.itops@domain.com">
+<span class="material-symbols-outlined text-brand-600 text-[18px]">mail</span>
+<span id="contact-email-text" class="">alex.rivera.itops@domain.com</span>
+</a>
+<div class="p-3 rounded-lg border border-graphite-200 bg-graphite-50 flex items-center gap-2 text-graphite-700">
+<span class="material-symbols-outlined text-brand-600 text-[18px]">phone</span>
+<span id="contact-phone-text" class="">+1 (555) 839-2041</span>
+</div>
+<a class="p-3 rounded-lg border border-graphite-200 bg-graphite-50 hover:bg-brand-50 hover:border-brand-200 transition-colors flex items-center gap-2 text-graphite-700" href="#">
+<span class="material-symbols-outlined text-brand-600 text-[18px]">link</span>
+<span class="">linkedin.com/in/alex-rivera-itops</span>
+</a>
+<a class="p-3 rounded-lg border border-graphite-200 bg-graphite-50 hover:bg-brand-50 hover:border-brand-200 transition-colors flex items-center gap-2 text-graphite-700" href="#">
+<span class="material-symbols-outlined text-brand-600 text-[18px]">terminal</span>
+<span class="">github.com/alexrivera-ops</span>
+</a>
+</div>
+</div>
+<div class="lg:col-span-5 bg-graphite-50 rounded-xl p-6 border border-graphite-200/90 space-y-4">
+<div class="flex items-center justify-between pb-2 border-b border-graphite-200">
+<h3 class="font-bold text-sm text-graphite-900">Solicitar Entrevista Rápida</h3>
+
+</div>
+<form class="space-y-3 text-xs" onsubmit="handleContactSubmit(event)">
+<div>
+<label class="block font-mono text-graphite-600 mb-1">Nombre / Empresa</label>
+<input class="w-full text-xs rounded-lg border-graphite-300 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 bg-white py-2 px-3" placeholder="p. ej. Sofia Valdés — CloudCorp" required="" type="text">
+</div>
+<div>
+<label class="block font-mono text-graphite-600 mb-1">Email Corporativo</label>
+<input class="w-full text-xs rounded-lg border-graphite-300 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 bg-white py-2 px-3" placeholder="reclutador@empresa.com" required="" type="email">
+</div>
+<div class="grid grid-cols-2 gap-2">
+<div>
+<label class="block font-mono text-graphite-600 mb-1">Modalidad</label>
+<select class="w-full text-xs rounded-lg border-graphite-300 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 bg-white py-2 px-2">
+<option>Remoto Total</option>
+<option>Híbrido</option>
+<option>Presencial</option>
+</select>
+</div>
+<div>
+<label class="block font-mono text-graphite-600 mb-1">Duración</label>
+<select class="w-full text-xs rounded-lg border-graphite-300 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 bg-white py-2 px-2">
+<option>15 min (Intro)</option>
+<option>30 min (Técnica)</option>
+<option>45 min (Panel)</option>
+</select>
+</div>
+</div>
+<button class="w-full py-2.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium text-xs shadow-sm transition-all flex items-center justify-center gap-1.5 mt-2" type="submit">
+<span class="">Enviar Solicitud</span>
+<span class="material-symbols-outlined text-[16px]">send</span>
+</button>
+</form>
+<div class="hidden p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-mono flex items-center gap-2" id="contact-success">
+<span class="material-symbols-outlined text-[16px] text-emerald-600">check_circle</span>
+<span class="">Solicitud recibida. Recibirás respuesta técnica en &lt; 2 horas.</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Clean Minimal Footer -->
+<footer class="w-full bg-white border-t border-graphite-200 py-8 mt-16 text-xs text-graphite-500 font-mono">
+<div class="max-w-7xl mx-auto px-4 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+<div class="flex items-center gap-2">
+<span class="font-bold text-graphite-900">ALEX RIVERA</span>
+<span class="text-graphite-300">/</span>
+<span class="">PRODUCTION IT OPERATIONS PORTFOLIO</span>
+</div>
+<div class="flex items-center gap-4">
+
+
+<button class="text-brand-600 hover:underline" onclick="openAdminModal()">Panel Admin</button>
+</div>
+</div>
+</footer>
+<!-- ======================================================== -->
+<!-- ADMIN MANAGEMENT MODAL / DRAWER (INTERACTIVE & COMPLETE) -->
+<!-- ======================================================== -->
+<div aria-labelledby="modal-title" aria-modal="true" class="fixed inset-0 z-50 transition-opacity duration-300 hidden" id="admin-modal" role="dialog">
+<!-- Backdrop -->
+<div class="fixed inset-0 bg-graphite-950/60 backdrop-blur-xs transition-opacity" onclick="closeAdminModal()"></div>
+<div class="fixed inset-y-0 right-0 max-w-full flex pl-10">
+<div class="w-screen max-w-xl bg-white shadow-2xl flex flex-col border-l border-graphite-200">
+<!-- Header -->
+<div class="p-6 border-b border-graphite-200 flex items-center justify-between bg-graphite-50">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-lg bg-brand-600 text-white flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+</div>
+<div>
+<h3 class="font-bold text-graphite-900 text-base" id="modal-title">Panel de Administración de Datos</h3>
+<p class="text-xs text-graphite-500 font-mono">Edita las métricas y datos en vivo del portafolio</p>
+</div>
+</div>
+<button class="text-graphite-400 hover:text-graphite-700 p-1.5 rounded-lg hover:bg-graphite-200/60 transition-colors" onclick="closeAdminModal()">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Form Body with Tabs -->
+<div class="flex-1 overflow-y-auto p-6 space-y-6 custom-scroll">
+<!-- Notice banner -->
+<div class="p-3 bg-brand-50 border border-brand-200 rounded-lg text-xs text-brand-900 flex items-start gap-2">
+<span class="material-symbols-outlined text-brand-600 text-base mt-0.5">info</span>
+<span class="">Los cambios guardados se reflejan inmediatamente en tiempo real sobre toda la interfaz.</span>
+</div>
+<!-- Section 1: Contador en Tiempo Real (Employment Timer Settings) -->
+<div class="space-y-3 pb-5 border-b border-graphite-200">
+<h4 class="text-xs font-mono font-bold uppercase text-graphite-700 tracking-wider flex items-center gap-1.5">
+<span class="material-symbols-outlined text-brand-600 text-[16px]">schedule</span>
+              Configuración de Contador en Tiempo Real
+            </h4>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+<div>
+<label class="block font-mono text-graphite-600 mb-1">Fecha de Inicio Laboral</label>
+<input class="w-full text-xs rounded-lg border-graphite-300 focus:border-brand-500 focus:ring-1 focus:ring-brand-500" id="admin-startDate" type="datetime-local">
+<span class="text-[11px] text-graphite-400 font-mono mt-0.5 block">Calcula años, meses, días, segs.</span>
+</div>
+<div>
+<label class="block font-mono text-graphite-600 mb-1">Empresa Actual</label>
+<input class="w-full text-xs rounded-lg border-graphite-300 focus:border-brand-500 focus:ring-1 focus:ring-brand-500" id="admin-company" type="text">
+</div>
+</div>
+<div>
+<label class="block font-mono text-xs text-graphite-600 mb-1">Puesto Actual</label>
+<input class="w-full text-xs rounded-lg border-graphite-300 focus:border-brand-500 focus:ring-1 focus:ring-brand-500" id="admin-role" type="text">
+</div>
+</div>
+<!-- Section 2: Métricas & KPIs Clave -->
+<div class="space-y-3 pb-5 border-b border-graphite-200" id="admin-kpi-group">
+<h4 class="text-xs font-mono font-bold uppercase text-graphite-700 tracking-wider flex items-center gap-1.5">
+<span class="material-symbols-outlined text-brand-600 text-[16px]">analytics</span>
+              Métricas Operativas (Dashboard)
+            </h4>
+<div class="grid grid-cols-2 gap-3 text-xs">
+<div>
+<label class="block font-mono text-graphite-600 mb-1">Total Boletos Resueltos</label>
+<input class="w-full text-xs rounded-lg border-graphite-300 focus:border-brand-500 focus:ring-1 focus:ring-brand-500" id="admin-tickets" placeholder="4,820+" type="text">
+</div>
+<div>
+<label class="block font-mono text-graphite-600 mb-1">SLA Cumplimiento (%)</label>
+<input class="w-full text-xs rounded-lg border-graphite-300 focus:border-brand-500 focus:ring-1 focus:ring-brand-500" id="admin-sla" placeholder="99.2%" type="text">
+</div>
+<div>
+<label class="block font-mono text-graphite-600 mb-1">Índice CSAT (%)</label>
+<input class="w-full text-xs rounded-lg border-graphite-300 focus:border-brand-500 focus:ring-1 focus:ring-brand-500" id="admin-csat" placeholder="98.4%" type="text">
+</div>
+<div>
+<label class="block font-mono text-graphite-600 mb-1">Tiempo Respuesta Inicial</label>
+<input class="w-full text-xs rounded-lg border-graphite-300 focus:border-brand-500 focus:ring-1 focus:ring-brand-500" id="admin-response" placeholder="7.4 min" type="text">
+</div>
+</div>
+<div class="grid grid-cols-2 gap-3 text-xs">
+<div>
+<label class="block font-mono text-graphite-600 mb-1">Uptime Anual (%)</label>
+<input class="w-full text-xs rounded-lg border-graphite-300 focus:border-brand-500 focus:ring-1 focus:ring-brand-500" id="admin-uptime" placeholder="99.95%" type="text">
+</div>
+<div>
+<label class="block font-mono text-graphite-600 mb-1">MTTR Global</label>
+<input class="w-full text-xs rounded-lg border-graphite-300 focus:border-brand-500 focus:ring-1 focus:ring-brand-500" id="admin-mttr" placeholder="42 min" type="text">
+</div>
+</div>
+</div>
+<!-- Section 3: Datos de Contacto & Encabezado -->
+<div class="space-y-3 pb-5 border-b border-graphite-200">
+<h4 class="text-xs font-mono font-bold uppercase text-graphite-700 tracking-wider flex items-center gap-1.5">
+<span class="material-symbols-outlined text-brand-600 text-[16px]">badge</span>
+              Identidad &amp; Perfil
+            </h4>
+<div class="grid grid-cols-2 gap-3 text-xs">
+<div>
+<label class="block font-mono text-graphite-600 mb-1">Nombre</label>
+<input class="w-full text-xs rounded-lg border-graphite-300 focus:border-brand-500 focus:ring-1 focus:ring-brand-500" id="admin-name" type="text">
+</div>
+<div>
+<label class="block font-mono text-graphite-600 mb-1">Título / Especialidad</label>
+<input class="w-full text-xs rounded-lg border-graphite-300 focus:border-brand-500 focus:ring-1 focus:ring-brand-500" id="admin-header-title" type="text">
+</div>
+</div>
+<div class="text-xs">
+<label class="block font-mono text-graphite-600 mb-1">Email Profesional</label>
+<input class="w-full text-xs rounded-lg border-graphite-300 focus:border-brand-500 focus:ring-1 focus:ring-brand-500" id="admin-email" type="email">
+</div>
+<div class="text-xs">
+<label class="block font-mono text-graphite-600 mb-1">Resumen del Perfil (Bio)</label>
+<textarea class="w-full text-xs rounded-lg border-graphite-300 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 leading-relaxed" id="admin-bio" rows="3"></textarea>
+</div>
+</div>
+<!-- Section 4: Categorías de Boletos (Distribución) -->
+<div class="space-y-3">
+<h4 class="text-xs font-mono font-bold uppercase text-graphite-700 tracking-wider flex items-center gap-1.5">
+<span class="material-symbols-outlined text-brand-600 text-[16px]">pie_chart</span>
+              Distribución de Casos (Porcentajes)
+            </h4>
+<div class="grid grid-cols-3 gap-2 text-xs">
+<div>
+<label class="block font-mono text-graphite-500 text-[11px]">Hardware (%)</label>
+<input class="w-full text-xs rounded border-graphite-300" id="admin-cat-hw" type="number">
+</div>
+<div>
+<label class="block font-mono text-graphite-500 text-[11px]">Redes/VPN (%)</label>
+<input class="w-full text-xs rounded border-graphite-300" id="admin-cat-net" type="number">
+</div>
+<div>
+<label class="block font-mono text-graphite-500 text-[11px]">IAM/Accesos (%)</label>
+<input class="w-full text-xs rounded border-graphite-300" id="admin-cat-iam" type="number">
+</div>
+<div>
+<label class="block font-mono text-graphite-500 text-[11px]">OS/MDM (%)</label>
+<input class="w-full text-xs rounded border-graphite-300" id="admin-cat-os" type="number">
+</div>
+<div>
+<label class="block font-mono text-graphite-500 text-[11px]">Seguridad (%)</label>
+<input class="w-full text-xs rounded border-graphite-300" id="admin-cat-sec" type="number">
+</div>
+<div>
+<label class="block font-mono text-graphite-500 text-[11px]">Cloud/Serv (%)</label>
+<input class="w-full text-xs rounded border-graphite-300" id="admin-cat-cloud" type="number">
+</div>
+</div>
+</div>
+</div>
+<!-- Footer / Action Buttons -->
+<div class="p-4 border-t border-graphite-200 bg-graphite-50 flex items-center justify-between">
+<button class="text-xs font-mono text-graphite-500 hover:text-graphite-900 underline" onclick="resetToDefaults()" type="button">
+            Restaurar Por Defecto
+          </button>
+<div class="flex items-center gap-2">
+<button class="px-3.5 py-2 rounded-lg border border-graphite-200 text-graphite-700 text-xs font-medium hover:bg-graphite-100 transition-colors" onclick="closeAdminModal()" type="button">
+              Cancelar
+            </button>
+<button class="px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium shadow-sm transition-all flex items-center gap-1.5" onclick="saveAdminChanges()" type="button">
+<span class="material-symbols-outlined text-[16px]">save</span>
+<span class="">Guardar Cambios</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Real-time Interactive JavaScript Application Engine -->
+<script>
+    // State Store
+    const appState = {
+      name: "Alex Rivera",
+      headerTitle: "IT Systems Admin",
+      role: "Lead IT Systems Administrator",
+      company: "CloudScale Solutions",
+      startDate: "2022-01-15T09:00:00",
+      tickets: "4,820+",
+      sla: "99.2%",
+      csat: "98.4%",
+      response: "7.4 min",
+      uptime: "99.95%",
+      mttr: "42 min",
+      email: "alex.rivera.itops@domain.com",
+      phone: "+1 (555) 839-2041",
+      bio: "Garantizo la continuidad y resiliencia de infraestructuras empresariales. Especialista en soporte multinivel, gobernanza de identidades (Entra ID, AD, Okta), gestión de flotas con Microsoft Intune, automatización mediante PowerShell y contención proactiva de incidentes.",
+      categories: {
+        hw: 24,
+        net: 20,
+        iam: 18,
+        os: 16,
+        sec: 11,
+        cloud: 11
+      }
+    };
+
+    // Load from localStorage if present
+    const saved = localStorage.getItem('ar_it_state');
+    if (saved) {
+      try {
+        Object.assign(appState, JSON.parse(saved));
+      } catch (e) {
+        console.warn('Could not parse saved state');
+      }
+    }
+
+    // Live Employment Counter Engine
+    function updateEmploymentTimer() {
+      const start = new Date(appState.startDate).getTime();
+      const now = new Date().getTime();
+      const diff = Math.max(0, now - start);
+
+      const second = 1000;
+      const minute = second * 60;
+      const hour = minute * 60;
+      const day = hour * 24;
+      const week = day * 7;
+      const year = day * 365.25;
+      const month = day * 30.4375;
+
+      const years = Math.floor(diff / year);
+      const remainingAfterYears = diff % year;
+
+      const months = Math.floor(remainingAfterYears / month);
+      const remainingAfterMonths = remainingAfterYears % month;
+
+      const days = Math.floor(remainingAfterMonths / day);
+      const remainingAfterDays = remainingAfterMonths % day;
+
+      const hours = Math.floor(remainingAfterDays / hour);
+      const remainingAfterHours = remainingAfterDays % hour;
+
+      const minutes = Math.floor(remainingAfterHours / minute);
+      const seconds = Math.floor((remainingAfterHours % minute) / second);
+
+      const totalWeeks = Math.floor(diff / week);
+
+      // DOM updates
+      const elYears = document.getElementById('clock-years');
+      const elMonths = document.getElementById('clock-months');
+      const elDays = document.getElementById('clock-days');
+      const elHours = document.getElementById('clock-hours');
+      const elMinutes = document.getElementById('clock-minutes');
+      const elSeconds = document.getElementById('clock-seconds');
+      const elWeeks = document.getElementById('clock-weeks');
+      const elInline = document.getElementById('experience-inline-counter');
+
+      if (elYears) elYears.textContent = years;
+      if (elMonths) elMonths.textContent = months;
+      if (elDays) elDays.textContent = days;
+      if (elHours) elHours.textContent = String(hours).padStart(2, '0');
+      if (elMinutes) elMinutes.textContent = String(minutes).padStart(2, '0');
+      if (elSeconds) elSeconds.textContent = String(seconds).padStart(2, '0');
+      if (elWeeks) elWeeks.textContent = totalWeeks.toLocaleString();
+
+      if (elInline) {
+        elInline.textContent = `${years} años, ${months} meses, ${days} días (${String(hours).padStart(2, '0')}h : ${String(minutes).padStart(2, '0')}m : ${String(seconds).padStart(2, '0')}s)`;
+      }
+    }
+
+    // Apply State to DOM
+    function renderState() {
+      document.getElementById('header-name').textContent = appState.name;
+      document.getElementById('header-title').textContent = appState.headerTitle;
+      document.getElementById('profile-heading').textContent = `${appState.role}`;
+      document.getElementById('profile-bio').textContent = appState.bio;
+
+      document.getElementById('current-role-title').textContent = appState.role;
+      document.getElementById('current-company-title').textContent = appState.company;
+
+      const startDateObj = new Date(appState.startDate);
+      const options = { year: 'numeric', month: 'short', day: 'numeric' };
+      document.getElementById('employment-start-text').textContent = `Desde el ${startDateObj.toLocaleDateString('es-ES', options)}`;
+
+      // Stats
+      document.getElementById('stat-tickets').textContent = appState.tickets;
+      document.getElementById('stat-sla').textContent = appState.sla;
+      document.getElementById('stat-csat').textContent = appState.csat;
+      document.getElementById('stat-response').textContent = appState.response;
+      document.getElementById('top-uptime').textContent = appState.uptime;
+      document.getElementById('card-mttr-display').textContent = appState.mttr;
+
+      // Contact
+      document.getElementById('contact-email-text').textContent = appState.email;
+      document.getElementById('contact-phone-text').textContent = appState.phone;
+
+      // Progress bar distribution
+      const bar = document.getElementById('categories-bar');
+      if (bar) {
+        bar.innerHTML = `
+          <div class="bg-brand-600 h-full transition-all" style="width: ${appState.categories.hw}%" title="Hardware (${appState.categories.hw}%)"></div>
+          <div class="bg-itblue h-full transition-all" style="width: ${appState.categories.net}%" title="Redes & VPN (${appState.categories.net}%)"></div>
+          <div class="bg-emerald-500 h-full transition-all" style="width: ${appState.categories.iam}%" title="IAM & Directorio (${appState.categories.iam}%)"></div>
+          <div class="bg-indigo-500 h-full transition-all" style="width: ${appState.categories.os}%" title="Sistemas Operativos (${appState.categories.os}%)"></div>
+          <div class="bg-rose-500 h-full transition-all" style="width: ${appState.categories.sec}%" title="Seguridad (${appState.categories.sec}%)"></div>
+          <div class="bg-amber-500 h-full transition-all" style="width: ${appState.categories.cloud}%" title="Cloud & Servidores (${appState.categories.cloud}%)"></div>
+        `;
+      }
+    }
+
+    // Admin Modal Actions
+    function openAdminModal(tab) {
+      // Sync form fields with state
+      document.getElementById('admin-startDate').value = appState.startDate.slice(0, 16);
+      document.getElementById('admin-company').value = appState.company;
+      document.getElementById('admin-role').value = appState.role;
+      document.getElementById('admin-tickets').value = appState.tickets;
+      document.getElementById('admin-sla').value = appState.sla;
+      document.getElementById('admin-csat').value = appState.csat;
+      document.getElementById('admin-response').value = appState.response;
+      document.getElementById('admin-uptime').value = appState.uptime;
+      document.getElementById('admin-mttr').value = appState.mttr;
+      document.getElementById('admin-name').value = appState.name;
+      document.getElementById('admin-header-title').value = appState.headerTitle;
+      document.getElementById('admin-email').value = appState.email;
+      document.getElementById('admin-bio').value = appState.bio;
+
+      document.getElementById('admin-cat-hw').value = appState.categories.hw;
+      document.getElementById('admin-cat-net').value = appState.categories.net;
+      document.getElementById('admin-cat-iam').value = appState.categories.iam;
+      document.getElementById('admin-cat-os').value = appState.categories.os;
+      document.getElementById('admin-cat-sec').value = appState.categories.sec;
+      document.getElementById('admin-cat-cloud').value = appState.categories.cloud;
+
+      const modal = document.getElementById('admin-modal');
+      modal.classList.remove('hidden');
+      document.body.classList.add('overflow-hidden');
+
+      if (tab === 'kpi-tab') {
+        const kpiGroup = document.getElementById('admin-kpi-group');
+        if (kpiGroup) kpiGroup.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    function closeAdminModal() {
+      const modal = document.getElementById('admin-modal');
+      modal.classList.add('hidden');
+      document.body.classList.remove('overflow-hidden');
+    }
+
+    function saveAdminChanges() {
+      appState.startDate = document.getElementById('admin-startDate').value || appState.startDate;
+      appState.company = document.getElementById('admin-company').value;
+      appState.role = document.getElementById('admin-role').value;
+      appState.tickets = document.getElementById('admin-tickets').value;
+      appState.sla = document.getElementById('admin-sla').value;
+      appState.csat = document.getElementById('admin-csat').value;
+      appState.response = document.getElementById('admin-response').value;
+      appState.uptime = document.getElementById('admin-uptime').value;
+      appState.mttr = document.getElementById('admin-mttr').value;
+      appState.name = document.getElementById('admin-name').value;
+      appState.headerTitle = document.getElementById('admin-header-title').value;
+      appState.email = document.getElementById('admin-email').value;
+      appState.bio = document.getElementById('admin-bio').value;
+
+      appState.categories = {
+        hw: Number(document.getElementById('admin-cat-hw').value) || 24,
+        net: Number(document.getElementById('admin-cat-net').value) || 20,
+        iam: Number(document.getElementById('admin-cat-iam').value) || 18,
+        os: Number(document.getElementById('admin-cat-os').value) || 16,
+        sec: Number(document.getElementById('admin-cat-sec').value) || 11,
+        cloud: Number(document.getElementById('admin-cat-cloud').value) || 11
+      };
+
+      localStorage.setItem('ar_it_state', JSON.stringify(appState));
+      renderState();
+      updateEmploymentTimer();
+      closeAdminModal();
+    }
+
+    function resetToDefaults() {
+      localStorage.removeItem('ar_it_state');
+      location.reload();
+    }
+
+    function handleContactSubmit(e) {
+      e.preventDefault();
+      const success = document.getElementById('contact-success');
+      success.classList.remove('hidden');
+      e.target.reset();
+      setTimeout(() => {
+        success.classList.add('hidden');
+      }, 6000);
+    }
+
+    // Attach listeners
+    document.addEventListener('DOMContentLoaded', () => {
+      renderState();
+      updateEmploymentTimer();
+      setInterval(updateEmploymentTimer, 1000);
+
+      document.getElementById('open-admin-btn').addEventListener('click', () => {
+        openAdminModal();
+      });
+
+      // Escape key to close modal
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeAdminModal();
+      });
+    });
+  </script>
+
+
+</body></html>

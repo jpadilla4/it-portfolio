@@ -1,0 +1,26 @@
+# Configuración de Fly.io. `fly launch` puede cambiar el nombre de la app.
+app = "jonathan-portfolio"
+primary_region = "mia"
+
+[build]
+
+[env]
+  NODE_ENV = "production"
+  TRUST_PROXY = "1"
+  PORT = "3000"
+
+# Volumen persistente para la base de datos SQLite (data/app.db).
+[mounts]
+  source = "portfolio_data"
+  destination = "/app/data"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

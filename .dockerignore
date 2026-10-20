@@ -1,0 +1,9 @@
+node_modules
+data
+.git
+*.log
+.env
+.claude
+doc-resume-jonathan
+code.html
+screen.png
