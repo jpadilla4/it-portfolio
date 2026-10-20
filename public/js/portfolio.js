@@ -657,10 +657,32 @@
     tick();
   }
 
+  /* ---------- Estadísticas ---------- */
+
+  /**
+   * Registra la visita de forma anónima (sin cookies). Envía de dónde llegó
+   * el visitante (`document.referrer` o `?ref=` / `?utm_source=`) y su idioma.
+   */
+  function trackVisit() {
+    if (navigator.webdriver) return; // navegadores automatizados
+    const q = new URLSearchParams(location.search);
+    fetch('/api/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        referrer: document.referrer,
+        ref: q.get('ref') || q.get('utm_source') || '',
+        lang: window.I18N.getLang()
+      }),
+      keepalive: true
+    }).catch(() => {});
+  }
+
   /* ---------- Arranque ---------- */
 
   /** Punto de entrada: descarga el contenido, lo pinta y arranca el reloj. */
   async function init() {
+    trackVisit();
     initMenu();
     initLangSwitch();
     window.I18N.applyStatic();

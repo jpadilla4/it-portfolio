@@ -12,6 +12,7 @@
  *  - sessions:  sesiones activas (se guarda el hash SHA-256 del token, nunca el token).
  *  - portfolio: una fila por sección del portafolio con su contenido en JSON.
  *  - messages:  solicitudes de entrevista enviadas desde el formulario público.
+ *  - pageviews, daily_stats, analytics_salts: estadísticas de visitas (ver analytics.js).
  */
 
 const fs = require('fs');
@@ -56,6 +57,31 @@ db.exec(`
     duration   TEXT,
     is_read    INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  -- Una fila por página vista (detalle de los últimos 90 días).
+  CREATE TABLE IF NOT EXISTS pageviews (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    day        TEXT NOT NULL,          -- YYYY-MM-DD en la zona horaria de las estadísticas
+    visitor    TEXT NOT NULL,          -- hash anónimo que cambia cada día
+    source     TEXT NOT NULL,
+    device     TEXT NOT NULL,
+    lang       TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS pageviews_day ON pageviews (day);
+
+  -- Totales por día que se conservan cuando el detalle se borra.
+  CREATE TABLE IF NOT EXISTS daily_stats (
+    day      TEXT PRIMARY KEY,
+    views    INTEGER NOT NULL,
+    visitors INTEGER NOT NULL
+  );
+
+  -- Sal aleatoria del día para el hash de visitantes (solo se guarda la de hoy).
+  CREATE TABLE IF NOT EXISTS analytics_salts (
+    day  TEXT PRIMARY KEY,
+    salt TEXT NOT NULL
   );
 `);
 

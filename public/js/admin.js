@@ -289,6 +289,7 @@
 
   /** Pestañas que no son secciones del portafolio. */
   const EXTRA_TABS = [
+    { key: 'stats', label: 'Estadísticas', icon: 'monitoring' },
     { key: 'messages', label: 'Solicitudes', icon: 'inbox' },
     { key: 'account', label: 'Cuenta', icon: 'manage_accounts' }
   ];
@@ -302,7 +303,8 @@
     active: 'profile', // pestaña activa
     draft: null,     // copia editable de la sección activa
     dirty: false,    // ¿hay cambios sin guardar?
-    unread: 0        // solicitudes sin leer (para la insignia del menú)
+    unread: 0,       // solicitudes sin leer (para la insignia del menú)
+    statsDays: 30    // periodo de la vista de estadísticas (7, 30 o 90 días)
   };
 
   /* ---------- Constructores de campos ---------- */
@@ -657,6 +659,96 @@
       list));
   }
 
+  /* ---------- Vista: estadísticas ---------- */
+
+  /** Dibuja las estadísticas de visitas del sitio público. */
+  async function renderStats() {
+    const panel = $('panel');
+    panel.replaceChildren(h('div', { class: 'skeleton h-40' }));
+    let s;
+    try { s = await api('GET', `/api/admin/stats?days=${state.statsDays}`); }
+    catch (e) { return toast(e.message, 'error'); }
+    if (state.active !== 'stats') return; // se cambió de pestaña mientras cargaba
+
+    const num = (n) => n.toLocaleString('es-ES');
+    const dayLabel = (d, opts = { day: 'numeric', month: 'short' }) =>
+      new Date(`${d}T12:00:00`).toLocaleDateString('es-ES', opts);
+
+    /** Tarjeta de resumen con visitantes y visitas. */
+    const kpi = (label, data, ic) => h('div', { class: 'bg-white rounded-2xl border border-graphite-200 p-4 shadow-sm' },
+      h('div', { class: 'flex items-center gap-1.5 text-xs font-mono text-graphite-500 uppercase tracking-wider' }, icon(ic, 'text-[16px]'), label),
+      h('div', { class: 'text-3xl font-bold tracking-tight mt-2' }, num(data.visitors)),
+      h('div', { class: 'text-xs text-graphite-500 mt-0.5' }, `visitantes · ${num(data.views)} visitas`));
+
+    // Selector de periodo.
+    const periods = h('div', { class: 'inline-flex rounded-lg border border-graphite-200 bg-white p-0.5' },
+      [7, 30, 90].map((d) => h('button', {
+        type: 'button',
+        'aria-pressed': d === state.statsDays ? 'true' : 'false',
+        class: `px-3 py-1.5 rounded-md text-xs font-medium ${d === state.statsDays ? 'bg-brand-600 text-white' : 'text-graphite-600 hover:bg-graphite-50'}`,
+        onclick: () => { state.statsDays = d; renderStats(); }
+      }, `${d} días`)));
+
+    // Gráfica de barras por día: visitas (claro) con visitantes (oscuro) delante.
+    const max = Math.max(1, ...s.series.map((r) => r.views));
+    const bars = h('div', { class: 'flex items-end gap-px sm:gap-0.5 h-40' },
+      s.series.map((r) => h('div', {
+        class: 'relative flex-1 h-full group',
+        title: `${dayLabel(r.day, { weekday: 'short', day: 'numeric', month: 'short' })}: ${r.visitors} visitantes · ${r.views} visitas`
+      },
+        h('div', { class: 'absolute bottom-0 inset-x-0 rounded-t-sm bg-brand-200 group-hover:bg-brand-300', style: `height:${(r.views / max) * 100}%` }),
+        h('div', { class: 'absolute bottom-0 inset-x-0 rounded-t-sm bg-brand-600', style: `height:${(r.visitors / max) * 100}%` }))));
+    const mid = s.series[Math.floor(s.series.length / 2)];
+    const axis = h('div', { class: 'flex justify-between text-[11px] font-mono text-graphite-400 mt-2' },
+      h('span', {}, dayLabel(s.series[0].day)), h('span', {}, dayLabel(mid.day)), h('span', {}, 'Hoy'));
+    const legend = h('div', { class: 'flex items-center gap-4 text-xs text-graphite-600' },
+      h('span', { class: 'flex items-center gap-1.5' }, h('span', { class: 'w-2.5 h-2.5 rounded-sm bg-brand-600' }), 'Visitantes'),
+      h('span', { class: 'flex items-center gap-1.5' }, h('span', { class: 'w-2.5 h-2.5 rounded-sm bg-brand-200' }), 'Visitas'));
+
+    /** Tarjeta con un desglose en barras horizontales y porcentajes. */
+    const breakdown = (title, ic, rows) => {
+      const total = rows.reduce((n, r) => n + r.visitors, 0);
+      return h('div', { class: 'bg-white rounded-2xl border border-graphite-200 p-4 sm:p-5 shadow-sm' },
+        h('h2', { class: 'flex items-center gap-1.5 text-xs font-mono font-bold uppercase tracking-wider text-graphite-700 mb-3' }, icon(ic, 'text-[16px]'), title),
+        rows.length
+          ? h('ul', { class: 'space-y-2.5' }, rows.map((r) => {
+            const pct = Math.round((r.visitors / total) * 100);
+            return h('li', {},
+              h('div', { class: 'flex justify-between gap-2 text-sm' },
+                h('span', { class: 'truncate' }, r.label),
+                h('span', { class: 'font-mono text-xs text-graphite-500 shrink-0' }, `${num(r.visitors)} · ${pct}%`)),
+              h('div', { class: 'h-1.5 rounded-full bg-graphite-100 mt-1 overflow-hidden' },
+                h('div', { class: 'h-full rounded-full bg-brand-600', style: `width:${pct}%` })));
+          }))
+          : h('p', { class: 'text-sm text-graphite-400' }, 'Sin datos todavía.'));
+    };
+    const langName = { es: 'Español', en: 'Inglés' };
+
+    panel.replaceChildren(h('div', { class: 'fade-up space-y-4' },
+      h('div', { class: 'flex flex-wrap items-end justify-between gap-3 mb-1' },
+        h('div', {},
+          h('h1', { class: 'text-2xl font-bold tracking-tight' }, 'Estadísticas'),
+          h('p', { class: 'text-sm text-graphite-500 mt-1' }, 'Visitas al sitio público. No se cuentan bots ni tus visitas con sesión iniciada.')),
+        periods),
+      h('div', { class: 'grid grid-cols-1 sm:grid-cols-3 gap-3' },
+        kpi('Hoy', s.today, 'today'),
+        kpi(`Últimos ${s.days} días`, s.period, 'date_range'),
+        kpi('Desde el inicio', s.allTime, 'all_inclusive')),
+      h('div', { class: 'bg-white rounded-2xl border border-graphite-200 p-4 sm:p-5 shadow-sm' },
+        h('div', { class: 'flex flex-wrap items-center justify-between gap-2 mb-4' },
+          h('h2', { class: 'text-xs font-mono font-bold uppercase tracking-wider text-graphite-700' }, 'Por día'),
+          legend),
+        bars, axis),
+      h('div', { class: 'grid grid-cols-1 md:grid-cols-3 gap-3' },
+        breakdown('De dónde vienen', 'travel_explore', s.sources),
+        breakdown('Dispositivo', 'devices', s.devices),
+        breakdown('Idioma', 'translate', s.langs.map((r) => ({ ...r, label: langName[r.label] || r.label })))),
+      h('p', { class: 'text-[11px] text-graphite-400 leading-relaxed' },
+        'Sin cookies: cada visitante se cuenta con un código anónimo que cambia cada día, así que una persona que vuelve otro día cuenta de nuevo. ',
+        'El detalle se borra a los 90 días; los totales diarios se conservan. ',
+        'Consejo: comparte tu enlace con ?ref=linkedin (o ?ref=resume) para saber exactamente de dónde llegan.')));
+  }
+
   /* ---------- Vista: cuenta ---------- */
 
   /** Dibuja la pantalla de cuenta (cambio de contraseña). */
@@ -743,6 +835,7 @@
   function renderPanel() {
     const section = SECTIONS.find((s) => s.key === state.active);
     if (section) renderSection(section);
+    else if (state.active === 'stats') renderStats();
     else if (state.active === 'messages') renderMessages();
     else renderAccount();
   }

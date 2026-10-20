@@ -4,15 +4,16 @@
  * Servidor Express del portafolio.
  *
  * Responsabilidades:
- *  - API pública:         GET /api/portfolio y POST /api/contact.
+ *  - API pública:         GET /api/portfolio, POST /api/contact y POST /api/track.
  *  - Autenticación:       registro (solo la primera cuenta), login, logout y cambio de contraseña.
- *  - API administrativa:  edición de secciones del portafolio y bandeja de solicitudes.
+ *  - API administrativa:  edición de secciones, bandeja de solicitudes y estadísticas.
  *  - Archivos estáticos:  sitio público (`public/`) y panel admin (`public/admin/`).
  *
  * Variables de entorno opcionales:
  *  - PORT:        puerto de escucha (por defecto 3000).
  *  - NODE_ENV:    con `production` la cookie de sesión se marca como Secure.
  *  - TRUST_PROXY: con `1` confía en el proxy inverso para obtener la IP real.
+ *  - STATS_TZ:    zona horaria de las estadísticas (por defecto America/Puerto_Rico).
  */
 
 const path = require('path');
@@ -20,6 +21,7 @@ const express = require('express');
 const db = require('./db');
 const defaults = require('./defaults');
 const auth = require('./auth');
+const analytics = require('./analytics');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -167,6 +169,21 @@ app.post(
   }
 );
 
+// Registro anónimo de una página vista (lo envía portfolio.js al cargar).
+app.post(
+  '/api/track',
+  auth.rateLimit({ windowMs: 10 * 60 * 1000, max: 30, message: 'Demasiadas solicitudes.' }),
+  (req, res) => {
+    const { referrer, ref, lang } = req.body || {};
+    analytics.record(req, {
+      referrer: String(referrer ?? '').slice(0, 500),
+      ref: String(ref ?? '').slice(0, 40),
+      lang
+    });
+    res.status(204).end();
+  }
+);
+
 /* ================= Autenticación ================= */
 
 // Máx. 10 intentos cada 15 minutos por IP en las rutas sensibles.
@@ -283,6 +300,12 @@ admin.patch('/messages/:id', (req, res) => {
 admin.delete('/messages/:id', (req, res) => {
   db.prepare('DELETE FROM messages WHERE id = ?').run(Number(req.params.id));
   res.json({ ok: true });
+});
+
+// Estadísticas de visitas del periodo pedido (7, 30 o 90 días).
+admin.get('/stats', (req, res) => {
+  const days = [7, 30, 90].includes(Number(req.query.days)) ? Number(req.query.days) : 30;
+  res.json(analytics.getStats(days));
 });
 
 app.use('/api/admin', admin);
