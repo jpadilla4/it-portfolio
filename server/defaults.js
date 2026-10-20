@@ -37,7 +37,7 @@ module.exports = {
     name: 'Jonathan L. Padilla',
     initials: 'JP',
     headerTitle: t('Técnico Especialista en TI', 'IT Specialist Technician'),
-    availability: t('Puerto Rico · Bilingüe ES / EN', 'Puerto Rico · Bilingual ES / EN'),
+    availability: t('Puerto Rico · ES / EN', 'Puerto Rico · ES / EN'),
     badgeTier: 'IT SPECIALIST · CYBERSECURITY',
     badgeYears: t('2+ AÑOS DE EXPERIENCIA', '2+ YEARS OF EXPERIENCE'),
     headline: t(
@@ -53,7 +53,7 @@ module.exports = {
       'M.S. Ciberseguridad (2026) · B.S. Ciencias de la Computación (2024)',
       'M.S. Cybersecurity (2026) · B.S. Computer Science (2024)'
     ),
-    languagesLine: t('Español · Inglés (Bilingüe)', 'Spanish · English (Bilingual)'),
+    languagesLine: t('Español', 'Spanish'),
     ctaPrimary: t('Agendar Entrevista', 'Schedule an Interview'),
     ctaSecondary: t('Ver Experiencia', 'View Experience'),
     highlightLabel: t('Alcance Regional', 'Regional Coverage'),
