@@ -342,6 +342,20 @@ admin.put('/portfolio/:section', wrap(async (req, res) => {
   res.json({ section, value });
 }));
 
+// Envía un correo de prueba y devuelve el resultado (o el error exacto de Resend),
+// para comprobar la configuración del aviso de solicitudes desde el panel.
+admin.post('/test-email', wrap(async (req, res) => {
+  const contact = (await getPortfolio()).contact;
+  const result = await sendContactEmail({
+    name: 'Prueba del panel',
+    email: contact.email,
+    mode: '—',
+    duration: '—',
+    message: 'Este es un correo de prueba enviado desde el panel de administración. Si lo recibes, el aviso de solicitudes funciona.'
+  }, contact.email, `${req.protocol}://${req.get('host')}/admin/`).catch((e) => ({ ok: false, reason: 'error', detail: e.message }));
+  res.json(result);
+}));
+
 // Restaura una sección a su contenido original.
 admin.post('/portfolio/:section/reset', wrap(async (req, res) => {
   const { section } = req.params;

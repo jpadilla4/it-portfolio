@@ -772,6 +772,7 @@
       h('div', { class: 'mb-5' },
         h('h1', { class: 'text-2xl font-bold tracking-tight' }, 'Solicitudes de entrevista'),
         h('p', { class: 'text-sm text-graphite-500 mt-1' }, 'Mensajes enviados desde el formulario del sitio público.')),
+      emailTestCard(),
       list));
   }
 
@@ -863,6 +864,47 @@
         'Sin cookies: cada visitante se cuenta con un código anónimo que cambia cada día, así que una persona que vuelve otro día cuenta de nuevo. ',
         'El detalle se borra a los 90 días; los totales diarios se conservan. ',
         'Consejo: comparte tu enlace con ?ref=linkedin (o ?ref=resume) para saber exactamente de dónde llegan.')));
+  }
+
+  /**
+   * Tarjeta para probar el aviso por correo: envía un correo de prueba y
+   * muestra el resultado o el motivo exacto del fallo (clave, destinatario…).
+   */
+  function emailTestCard() {
+    const out = h('div', { class: 'hidden text-xs rounded-lg p-3 mt-3 border whitespace-pre-wrap break-words' });
+    const show = (ok, text) => {
+      out.className = `text-xs rounded-lg p-3 mt-3 border whitespace-pre-wrap break-words ${ok ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-800'}`;
+      out.textContent = text;
+    };
+    /** Explica en lenguaje sencillo los errores más comunes de Resend. */
+    const hint = (r) => {
+      const d = String(r.detail || '');
+      if (r.reason === 'no_key') return 'El sitio no tiene la clave. En Vercel añade RESEND_API_KEY (entorno Production) y haz Redeploy.';
+      if (r.status === 401 || r.status === 400 && /api key/i.test(d)) return 'La clave no es válida. Genera una nueva en Resend (API Keys) y pégala completa en Vercel, sin espacios, y haz Redeploy.';
+      if (r.status === 403 && /own email/i.test(d)) return 'La cuenta de Resend se creó con otro correo. Con el remitente de pruebas solo puede enviar al correo de la cuenta: crea la cuenta de Resend con el correo de la sección Contacto o cambia ese correo.';
+      return '';
+    };
+    const btn = h('button', {
+      type: 'button',
+      class: 'px-3 py-1.5 rounded-lg border border-graphite-200 bg-white hover:bg-graphite-50 text-xs font-medium text-graphite-700 flex items-center gap-1.5',
+      onclick: async () => {
+        btn.disabled = true;
+        show(true, 'Enviando…');
+        try {
+          const r = await api('POST', '/api/admin/test-email');
+          if (r.ok) show(true, `Correo de prueba enviado a ${r.to}. Revisa la bandeja de entrada y la carpeta de spam.`);
+          else show(false, [`No se pudo enviar${r.status ? ` (Resend respondió ${r.status})` : ''}:`, r.detail, hint(r)].filter(Boolean).join(String.fromCharCode(10)));
+        } catch (e) { show(false, e.message); }
+        btn.disabled = false;
+      }
+    }, icon('forward_to_inbox', 'text-[16px]'), 'Enviar correo de prueba');
+    return h('div', { class: 'bg-white rounded-2xl border border-graphite-200 p-4 mb-4' },
+      h('div', { class: 'flex flex-wrap items-center justify-between gap-3' },
+        h('div', {},
+          h('div', { class: 'text-sm font-bold' }, 'Aviso por correo'),
+          h('p', { class: 'text-xs text-graphite-500' }, 'Cada solicitud nueva se envía al email de la sección Contacto (con Resend).')),
+        btn),
+      out);
   }
 
   /* ---------- Vista: cuenta ---------- */

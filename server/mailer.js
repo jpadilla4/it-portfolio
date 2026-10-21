@@ -21,12 +21,14 @@ const esc = (v) =>
  * @param {{name:string, email:string, mode:string, duration:string, message:string}} data Solicitud ya validada.
  * @param {string} fallbackTo Destinatario si no hay CONTACT_NOTIFY_EMAIL.
  * @param {string} [adminUrl] Enlace al panel para ver la solicitud.
- * @returns {Promise<boolean>} `true` si Resend aceptó el correo.
+ * @returns {Promise<{ok: boolean, reason?: string, status?: number, detail?: string, to?: string}>}
+ *   Resultado del envío; si falla, `reason` y `detail` explican por qué.
  */
 async function sendContactEmail(data, fallbackTo, adminUrl) {
   const key = process.env.RESEND_API_KEY?.trim();
   const to = (process.env.CONTACT_NOTIFY_EMAIL || fallbackTo || '').trim();
-  if (!key || !to) return false;
+  if (!key) return { ok: false, reason: 'no_key', detail: 'Falta la variable RESEND_API_KEY en el servidor.' };
+  if (!to) return { ok: false, reason: 'no_to', detail: 'No hay destinatario: añade un email en la sección Contacto.' };
 
   const rows = [
     ['Nombre / Empresa', data.name],
@@ -62,10 +64,13 @@ async function sendContactEmail(data, fallbackTo, adminUrl) {
     signal: AbortSignal.timeout(8000)
   });
   if (!res.ok) {
-    console.error('Resend respondió', res.status, (await res.text()).slice(0, 300));
-    return false;
+    const body = (await res.text()).slice(0, 500);
+    let detail = body;
+    try { detail = JSON.parse(body).message || body; } catch { /* respuesta no JSON */ }
+    console.error('Resend respondió', res.status, body);
+    return { ok: false, reason: 'resend', status: res.status, detail, to };
   }
-  return true;
+  return { ok: true, to };
 }
 
 module.exports = { sendContactEmail };
