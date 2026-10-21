@@ -249,6 +249,8 @@ module.exports = {
   /* ---------------- Proyectos con IA (carrusel con galería) ---------------- */
   // `images` guarda ids de imágenes subidas desde el panel (ver /api/images/:id).
   // `videoUrl` admite enlaces de YouTube o Loom y se muestra como diapositiva.
+  // `icon` (Material Symbols) o `logo` (imagen subida) se muestran en la portada
+  // de la tarjeta, que se quita al hacer clic para ver la galería.
   projects: {
     badge: t('PROYECTOS', 'PROJECTS'),
     title: t('Proyectos con IA', 'AI Projects'),
@@ -267,6 +269,8 @@ module.exports = {
         demoUrl: 'https://it-portfolio-taupe.vercel.app',
         codeUrl: '',
         videoUrl: '',
+        icon: 'web',
+        logo: [],
         images: []
       }
     ]

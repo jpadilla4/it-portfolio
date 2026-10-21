@@ -169,7 +169,7 @@ function saveSection(section, value) {
  * @param {Object} projects Contenido de la sección `projects`.
  */
 function pruneImages(projects) {
-  const used = [...new Set(projects.items.flatMap((p) => p.images))].filter((id) => IMAGE_ID_RE.test(id));
+  const used = [...new Set(projects.items.flatMap((p) => [...p.images, ...p.logo]))].filter((id) => IMAGE_ID_RE.test(id));
   const notIn = used.length ? `AND id NOT IN (${used.map(() => '?').join(',')})` : '';
   return db.run(`DELETE FROM images WHERE created_at < datetime('now', '-1 day') ${notIn}`, used);
 }

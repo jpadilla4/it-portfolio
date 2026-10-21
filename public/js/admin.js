@@ -225,12 +225,14 @@
           itemTitle: (i) => pick(i.title),
           newItem: {
             title: bi('Nuevo proyecto', 'New project'), description: bi(), tech: [],
-            demoUrl: '', codeUrl: '', videoUrl: '', images: []
+            demoUrl: '', codeUrl: '', videoUrl: '', icon: 'smart_toy', logo: [], images: []
           },
           itemFields: [
             { key: 'title', label: 'Nombre del proyecto', i18n: true, span: true },
             { key: 'description', label: 'Descripción', type: 'textarea', rows: 3, i18n: true, span: true, hint: 'Usa **texto** para negrita.' },
-            { key: 'images', label: 'Imágenes (galería)', type: 'images', span: true, hint: 'JPG, PNG o WebP. Se reducen a 1600 px y se comprimen automáticamente. La primera es la portada.' },
+            { key: 'icon', label: 'Icono de la portada (Material Symbols)', hint: 'Ej.: web, contact_phone, smart_toy, dns, shield_lock. Búscalos en fonts.google.com/icons' },
+            { key: 'logo', label: 'Logo / miniatura (opcional)', type: 'images', max: 1, hint: 'Sustituye al icono. Mejor cuadrado.' },
+            { key: 'images', label: 'Imágenes (galería)', type: 'images', span: true, hint: 'JPG, PNG o WebP. Se reducen a 1600 px y se comprimen automáticamente. La primera se usa de fondo en la portada.' },
             { key: 'videoUrl', label: 'Video (YouTube o Loom, opcional)', type: 'url', span: true, hint: 'Aparece como la última diapositiva de la galería.' },
             { key: 'demoUrl', label: 'Enlace "Ver demo" (opcional)', type: 'url' },
             { key: 'codeUrl', label: 'Enlace "Código" (opcional)', type: 'url' },
@@ -418,7 +420,7 @@
           f.options.map(([v, l]) => h('option', { value: v, selected: obj[f.key] === v }, l))
         );
       case 'images':
-        return buildImages(obj, f.key, changed);
+        return buildImages(obj, f.key, changed, f.max);
       case 'checkbox':
         return h(
           'label',
@@ -459,11 +461,11 @@
    * Editor de la galería de un proyecto: miniaturas que se pueden reordenar o
    * quitar, y un botón para subir imágenes nuevas. Guarda los ids en `obj[key]`.
    */
-  function buildImages(obj, key, changed) {
+  function buildImages(obj, key, changed, max = Infinity) {
     if (!Array.isArray(obj[key])) obj[key] = [];
     const wrap = h('div', { class: 'space-y-2' });
     const status = h('p', { class: 'text-xs font-mono text-graphite-500 hidden' });
-    const input = h('input', { type: 'file', accept: 'image/jpeg,image/png,image/webp', multiple: true, class: 'hidden' });
+    const input = h('input', { type: 'file', accept: 'image/jpeg,image/png,image/webp', multiple: max > 1, class: 'hidden' });
 
     const render = () => {
       const list = obj[key];
@@ -479,9 +481,9 @@
             type: 'button', 'aria-label': label, title: label, onclick,
             class: `w-7 h-7 rounded-md bg-white/90 hover:bg-white text-graphite-700 flex items-center justify-center shadow-sm ${extra}`
           }, icon(name, 'text-[16px]'));
-          return h('div', { class: 'relative aspect-video rounded-lg overflow-hidden border border-graphite-200 bg-graphite-100' },
+          return h('div', { class: `relative ${max === 1 ? 'aspect-square' : 'aspect-video'} rounded-lg overflow-hidden border border-graphite-200 bg-graphite-100` },
             h('img', { src: `/api/images/${id}`, alt: `Imagen ${i + 1}`, class: 'w-full h-full object-cover', loading: 'lazy' }),
-            i === 0 ? h('span', { class: 'absolute top-1 left-1 px-1.5 py-0.5 rounded bg-brand-600 text-white text-[10px] font-mono' }, 'PORTADA') : null,
+            i === 0 && max > 1 ? h('span', { class: 'absolute top-1 left-1 px-1.5 py-0.5 rounded bg-brand-600 text-white text-[10px] font-mono' }, 'PORTADA') : null,
             h('div', { class: 'absolute bottom-1 right-1 flex gap-1' },
               i > 0 ? btn('arrow_back', 'Mover a la izquierda', move(-1)) : null,
               i < list.length - 1 ? btn('arrow_forward', 'Mover a la derecha', move(1)) : null,
@@ -491,8 +493,9 @@
         type: 'button',
         class: 'w-full py-2 rounded-lg border-2 border-dashed border-graphite-300 text-graphite-600 hover:border-brand-500 hover:text-brand-600 hover:bg-brand-50/40 text-sm font-medium flex items-center justify-center gap-1.5',
         onclick: () => input.click()
-      }, icon('add_photo_alternate', 'text-[18px]'), 'Subir imágenes');
-      wrap.replaceChildren(list.length ? grid : h('p', { class: 'text-xs text-graphite-400' }, 'Sin imágenes: se mostrará un icono en su lugar.'), add, status, input);
+      }, icon('add_photo_alternate', 'text-[18px]'), max === 1 ? (list.length ? 'Cambiar imagen' : 'Subir imagen') : 'Subir imágenes');
+      const empty = max === 1 ? 'Sin logo: se usa el icono.' : 'Sin imágenes: se mostrará el icono en su lugar.';
+      wrap.replaceChildren(list.length ? grid : h('p', { class: 'text-xs text-graphite-400' }, empty), add, status, input);
     };
 
     input.addEventListener('change', async () => {
@@ -503,7 +506,8 @@
         status.textContent = `Subiendo ${n + 1} de ${files.length}…`;
         try {
           const { id } = await api('POST', '/api/admin/images', { data: await compressImage(file) });
-          if (!obj[key].includes(id)) obj[key].push(id);
+          if (max === 1) obj[key].splice(0, obj[key].length, id);
+          else if (!obj[key].includes(id)) obj[key].push(id);
           changed(); render();
         } catch (e) {
           toast(`${file.name}: ${e.message}`, 'error');

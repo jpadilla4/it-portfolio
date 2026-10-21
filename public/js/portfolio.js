@@ -31,6 +31,9 @@
   /** Acepta solo URLs http(s); cualquier otra cosa se convierte en `#`. */
   const safeUrl = (u) => (/^https?:\/\//i.test(String(u).trim()) ? esc(String(u).trim()) : '#');
 
+  /** Unidad de tiempo en singular o plural según `n` (p. ej. "1 año", "2 años"). */
+  const unit = (n, u) => t(`unit.${u}.${n === 1 ? 'one' : 'other'}`);
+
   /** Atajo para `document.getElementById`. */
   const $ = (id) => document.getElementById(id);
 
@@ -122,11 +125,11 @@
             </div>
           </div>
           <div class="grid grid-cols-4 gap-2 pt-2 text-center font-mono">
-            ${[['years', 'hero.years'], ['months', 'hero.months'], ['days', 'hero.days'], ['hours', 'hero.hours']]
+            ${[['years', 'year'], ['months', 'month'], ['days', 'day'], ['hours', 'hour']]
               .map(
-                ([k, label]) => `<div class="bg-white rounded-lg p-2 sm:p-2.5 border border-graphite-200/80">
+                ([k, u]) => `<div class="bg-white rounded-lg p-2 sm:p-2.5 border border-graphite-200/80">
                   <div class="text-xl sm:text-2xl font-bold text-brand-600" id="clock-${k}">0</div>
-                  <div class="text-[10px] uppercase text-graphite-500 tracking-wider font-sans font-medium">${esc(t(label))}</div>
+                  <div class="text-[10px] uppercase text-graphite-500 tracking-wider font-sans font-medium" id="clock-${k}-label">${esc(unit(0, u))}</div>
                 </div>`
               )
               .join('')}
@@ -174,13 +177,13 @@
           </div>
           <div class="lg:col-span-5 flex flex-col gap-4 min-w-0">
             ${clockCard}
-            <div class="p-4 rounded-xl border border-graphite-200 bg-white flex items-center justify-between gap-3">
-              <div class="flex items-center gap-3 min-w-0">
+            <div class="p-4 rounded-xl border border-graphite-200 bg-white flex flex-wrap items-center justify-between gap-3">
+              <div class="flex items-center gap-3 min-w-[12rem] flex-1">
                 <div class="w-10 h-10 shrink-0 rounded-lg bg-brand-50 border border-brand-100 flex items-center justify-center text-brand-600">
                   <span class="material-symbols-outlined text-[20px]">local_police</span>
                 </div>
                 <div class="min-w-0">
-                  <div class="text-xs font-mono text-graphite-500 uppercase truncate">${esc(tr(p.highlightLabel))}</div>
+                  <div class="text-xs font-mono text-graphite-500 uppercase">${esc(tr(p.highlightLabel))}</div>
                   <div class="text-base font-bold text-graphite-900">${esc(tr(p.highlight))}</div>
                 </div>
               </div>
@@ -341,6 +344,42 @@
   /** Diapositivas de cada proyecto (imágenes y video) y la que muestra cada tarjeta. */
   let projectSlides = [];
   let projectIndex = [];
+  /** Tarjetas cuya portada ya se quitó (se conserva al cambiar de idioma). */
+  const projectRevealed = new Set();
+
+  /** Acepta solo nombres válidos de Material Symbols (letras, números y guion bajo). */
+  const iconName = (v) => (/^[a-z0-9_]{1,40}$/.test(String(v || '').trim()) ? String(v).trim() : 'smart_toy');
+
+  /** Icono o logo del proyecto dentro de un recuadro blanco (portada y tarjetas sin imágenes). */
+  function projectBadge(x, size = 'w-16 h-16') {
+    const logo = (x.logo || []).find((id) => /^[a-f0-9]{24}$/.test(id));
+    return `<span class="relative ${size} rounded-2xl bg-white text-brand-600 shadow-lg ring-1 ring-black/5 flex items-center justify-center overflow-hidden transition-transform duration-300">
+      ${logo ? `<img src="/api/images/${logo}" alt="" class="w-full h-full object-cover">` : `<span class="material-symbols-outlined text-[34px]">${iconName(x.icon)}</span>`}
+    </span>`;
+  }
+
+  /**
+   * Portada de la tarjeta `i`: primera imagen desenfocada y oscurecida con el
+   * icono/logo, el nombre y "Ver proyecto". Con el mouse encima se aclara; al
+   * hacer clic (o tocar) desaparece y deja la galería a la vista.
+   */
+  function projectCover(x, i) {
+    const first = projectSlides[i].find((s) => s.type === 'img');
+    const bg = first ? `<span class="absolute inset-0 bg-cover bg-center scale-110 blur-[3px]" style="background-image:url('${esc(first.src)}')"></span>` : '';
+    const hidden = projectRevealed.has(i) ? ' opacity-0 pointer-events-none' : '';
+    return `<div data-cover="${i}" class="absolute inset-0 z-10 transition-opacity duration-300${hidden}">
+      <button type="button" data-action="reveal" data-project="${i}" class="group/cover absolute inset-0 w-full h-full flex flex-col items-center justify-center gap-2.5 text-white overflow-hidden"
+        aria-label="${esc(`${t('projects.view')}: ${tr(x.title)}`)}">
+        ${bg}
+        <span class="absolute inset-0 bg-gradient-to-br from-graphite-950/80 to-brand-900/70 group-hover/cover:from-graphite-950/55 group-hover/cover:to-brand-900/45 transition-colors duration-300"></span>
+        <span class="group-hover/cover:scale-110 transition-transform duration-300">${projectBadge(x)}</span>
+        <span class="relative font-bold text-[15px] px-6 text-center leading-snug drop-shadow">${esc(tr(x.title))}</span>
+        <span class="relative inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 border border-white/30 text-xs font-medium backdrop-blur-sm group-hover/cover:bg-white group-hover/cover:text-graphite-900 transition-colors duration-300">
+          <span class="material-symbols-outlined text-[16px]">visibility</span>${esc(t('projects.view'))}
+        </span>
+      </button>
+    </div>`;
+  }
 
   /** HTML del contenido de una diapositiva dentro de la tarjeta (miniatura). */
   function slideThumb(s, alt) {
@@ -410,9 +449,10 @@
                      <span class="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 pointer-events-none">${slides.map(() => '<span data-dot></span>').join('')}</span>`
                   : ''
               }
+              ${projectCover(x, i)}
             </div>`
-          : `<div class="aspect-video bg-brand-50 flex items-center justify-center text-brand-600">
-              <span class="material-symbols-outlined text-5xl">smart_toy</span>
+          : `<div class="aspect-video bg-gradient-to-br from-brand-50 to-graphite-100 flex items-center justify-center">
+              ${projectBadge(x)}
             </div>`;
         const tech = x.tech.filter((s) => s.trim());
         // Solo se muestran enlaces http(s) válidos.
@@ -515,6 +555,15 @@
           const total = projectSlides[i].length;
           projectIndex[i] = (projectIndex[i] + (btn.dataset.action === 'next-slide' ? 1 : -1) + total) % total;
           paintProjectMedia(i);
+          break;
+        }
+        case 'reveal': {
+          projectRevealed.add(i);
+          const cover = document.querySelector(`[data-cover="${i}"]`);
+          cover.classList.add('opacity-0', 'pointer-events-none');
+          // Si se activó con el teclado (detail 0), el foco pasa a la imagen
+          // para seguir navegando; con mouse o dedo no se muestra el anillo de foco.
+          if (e.detail === 0) document.querySelector(`[data-action="open"][data-project="${i}"]`)?.focus({ preventScroll: true });
           break;
         }
         case 'open':
@@ -801,12 +850,19 @@
     set('clock-months', parts.mo);
     set('clock-days', parts.d);
     set('clock-hours', pad(parts.h));
+    set('clock-years-label', unit(parts.y, 'year'));
+    set('clock-months-label', unit(parts.mo, 'month'));
+    set('clock-days-label', unit(parts.d, 'day'));
+    set('clock-hours-label', unit(parts.h, 'hour'));
     set('clock-minutes', pad(parts.mi));
     set('clock-seconds', pad(parts.s));
     set('clock-weeks', Math.floor((now - clockStart) / 604800000).toLocaleString(window.I18N.locale()));
     set(
       'experience-inline-counter',
-      t('exp.counter', { y: parts.y, mo: parts.mo, d: parts.d, h: pad(parts.h), mi: pad(parts.mi), s: pad(parts.s) })
+      t('exp.counter', {
+        y: parts.y, yl: unit(parts.y, 'year'), mo: parts.mo, mol: unit(parts.mo, 'month'),
+        d: parts.d, dl: unit(parts.d, 'day'), h: pad(parts.h), mi: pad(parts.mi), s: pad(parts.s)
+      })
     );
   }
 
