@@ -449,6 +449,11 @@
       <div id="projects-track" class="flex gap-4 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">${cards}</div>`;
 
     items.forEach((_, i) => projectSlides[i].length && paintProjectMedia(i));
+    // Las flechas dependen del ancho real de las tarjetas, que puede cambiar
+    // cuando Tailwind (CDN) termina de generar sus estilos: se recalculan
+    // cada vez que cambia el tamaño de alguna tarjeta.
+    const ro = new ResizeObserver(updateTrackNav);
+    [...$('projects-track').children].forEach((card) => ro.observe(card));
     updateTrackNav();
   }
 
