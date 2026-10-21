@@ -8,13 +8,20 @@
  *  - Autenticación:       registro (solo la primera cuenta), login, logout y cambio de contraseña.
  *  - API administrativa:  edición de secciones, bandeja de solicitudes y estadísticas.
  *  - Archivos estáticos:  sitio público (`public/`) y panel admin (`public/admin/`).
+ *    En Vercel los sirve la plataforma; Express solo atiende `/api/*` (ver api/index.js).
  *
- * Variables de entorno opcionales:
+ * Ejecutado directamente (`npm start`) escucha en PORT; importado, solo exporta la app.
+ *
+ * Variables de entorno opcionales (también se leen de un archivo `.env`):
+ *  - TURSO_DATABASE_URL, TURSO_AUTH_TOKEN: base de datos en Turso (si faltan, usa data/app.db).
  *  - PORT:        puerto de escucha (por defecto 3000).
  *  - NODE_ENV:    con `production` la cookie de sesión se marca como Secure.
- *  - TRUST_PROXY: con `1` confía en el proxy inverso para obtener la IP real.
+ *  - TRUST_PROXY: con `1` confía en el proxy inverso para obtener la IP real (automático en Vercel).
  *  - STATS_TZ:    zona horaria de las estadísticas (por defecto America/Puerto_Rico).
  */
+
+// Carga `.env` si existe (en Vercel las variables vienen de la plataforma).
+try { process.loadEnvFile(); } catch { /* sin archivo .env */ }
 
 const path = require('path');
 const express = require('express');
@@ -28,7 +35,7 @@ const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 
 app.disable('x-powered-by');
-app.set('trust proxy', process.env.TRUST_PROXY === '1');
+app.set('trust proxy', process.env.TRUST_PROXY === '1' || !!process.env.VERCEL);
 
 // Encabezados de seguridad básicos para todas las respuestas.
 app.use((req, res, next) => {
@@ -38,6 +45,8 @@ app.use((req, res, next) => {
   next();
 });
 app.use(express.json({ limit: '200kb' }));
+// Espera a que el esquema de la base de datos esté listo (primera petición tras arrancar).
+app.use((req, res, next) => db.ready.then(() => next(), next));
 app.use('/api', auth.sameOrigin);
 app.use('/api', (req, res, next) => {
   // Las respuestas de la API nunca deben cachearse.
@@ -52,6 +61,12 @@ app.use('/api', (req, res, next) => {
 const DUMMY_HASH = auth.hashPassword('dummy-password-for-timing');
 const USERNAME_RE = /^[a-zA-Z0-9_.-]{3,32}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+/**
+ * Envuelve un manejador asíncrono para que sus errores lleguen al manejador
+ * global (Express 4 no captura promesas rechazadas).
+ */
+const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
 /** Devuelve el tipo "lógico" de un valor distinguiendo array y null. */
 const kindOf = (v) => (Array.isArray(v) ? 'array' : v === null ? 'null' : typeof v);
@@ -109,11 +124,11 @@ function conform(value, template, depth = 0) {
  * una forma antigua o está corrupto, se usa el contenido por defecto en lugar
  * de romper el sitio público.
  *
- * @returns {Object<string, *>} Mapa `sección -> contenido`.
+ * @returns {Promise<Object<string, *>>} Mapa `sección -> contenido`.
  */
-function getPortfolio() {
+async function getPortfolio() {
   const stored = {};
-  for (const row of db.prepare('SELECT section, value FROM portfolio').all()) {
+  for (const row of await db.all('SELECT section, value FROM portfolio')) {
     stored[row.section] = row.value;
   }
 
@@ -134,24 +149,25 @@ function getPortfolio() {
  * @param {*} value Contenido ya saneado.
  */
 function saveSection(section, value) {
-  db.prepare(
+  return db.run(
     `INSERT INTO portfolio (section, value, updated_at) VALUES (?, ?, datetime('now'))
-     ON CONFLICT(section) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`
-  ).run(section, JSON.stringify(value));
+     ON CONFLICT(section) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`,
+    [section, JSON.stringify(value)]
+  );
 }
 
 /* ================= API pública ================= */
 
 // Contenido completo del portafolio (todas las secciones, ambos idiomas).
-app.get('/api/portfolio', (req, res) => {
-  res.json(getPortfolio());
-});
+app.get('/api/portfolio', wrap(async (req, res) => {
+  res.json(await getPortfolio());
+}));
 
 // Formulario "Solicitar entrevista" del sitio público (máx. 8 envíos/hora por IP).
 app.post(
   '/api/contact',
-  auth.rateLimit({ windowMs: 60 * 60 * 1000, max: 8, message: 'Demasiadas solicitudes. Intenta más tarde.' }),
-  (req, res) => {
+  auth.rateLimit({ name: 'contact', windowMs: 60 * 60 * 1000, max: 8, message: 'Demasiadas solicitudes. Intenta más tarde.' }),
+  wrap(async (req, res) => {
     const { name, email, mode, duration } = req.body || {};
     const clean = (v, max) => String(v ?? '').trim().slice(0, max);
     const data = {
@@ -163,31 +179,32 @@ app.post(
     if (!data.name) return res.status(400).json({ error: 'El nombre es obligatorio' });
     if (!EMAIL_RE.test(data.email)) return res.status(400).json({ error: 'Email no válido' });
 
-    db.prepare('INSERT INTO messages (name, email, mode, duration) VALUES (?, ?, ?, ?)')
-      .run(data.name, data.email, data.mode, data.duration);
+    await db.run('INSERT INTO messages (name, email, mode, duration) VALUES (?, ?, ?, ?)',
+      [data.name, data.email, data.mode, data.duration]);
     res.status(201).json({ ok: true });
-  }
+  })
 );
 
 // Registro anónimo de una página vista (lo envía portfolio.js al cargar).
 app.post(
   '/api/track',
-  auth.rateLimit({ windowMs: 10 * 60 * 1000, max: 30, message: 'Demasiadas solicitudes.' }),
-  (req, res) => {
+  auth.rateLimit({ name: 'track', windowMs: 10 * 60 * 1000, max: 30, message: 'Demasiadas solicitudes.' }),
+  wrap(async (req, res) => {
     const { referrer, ref, lang } = req.body || {};
-    analytics.record(req, {
+    await analytics.record(req, {
       referrer: String(referrer ?? '').slice(0, 500),
       ref: String(ref ?? '').slice(0, 40),
       lang
     });
     res.status(204).end();
-  }
+  })
 );
 
 /* ================= Autenticación ================= */
 
 // Máx. 10 intentos cada 15 minutos por IP en las rutas sensibles.
 const loginLimiter = auth.rateLimit({
+  name: 'login',
   windowMs: 15 * 60 * 1000,
   max: 10,
   message: 'Demasiados intentos. Espera unos minutos.'
@@ -195,14 +212,14 @@ const loginLimiter = auth.rateLimit({
 
 // Estado de la sesión: indica si ya existe alguna cuenta (para mostrar
 // "Crear cuenta" o "Iniciar sesión") y el usuario actual, si lo hay.
-app.get('/api/auth/status', (req, res) => {
-  const { n } = db.prepare('SELECT COUNT(*) AS n FROM users').get();
-  res.json({ hasUsers: n > 0, user: auth.getUserFromRequest(req) });
-});
+app.get('/api/auth/status', wrap(async (req, res) => {
+  const { n } = await db.get('SELECT COUNT(*) AS n FROM users');
+  res.json({ hasUsers: n > 0, user: await auth.getUserFromRequest(req) });
+}));
 
 // Registro: solo permitido mientras no exista ningún usuario (primera cuenta admin).
-app.post('/api/auth/register', loginLimiter, (req, res) => {
-  const { n } = db.prepare('SELECT COUNT(*) AS n FROM users').get();
+app.post('/api/auth/register', loginLimiter, wrap(async (req, res) => {
+  const { n } = await db.get('SELECT COUNT(*) AS n FROM users');
   if (n > 0) return res.status(403).json({ error: 'El registro está cerrado' });
 
   const username = String(req.body?.username ?? '').trim();
@@ -214,37 +231,42 @@ app.post('/api/auth/register', loginLimiter, (req, res) => {
     return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
   }
 
-  const info = db.prepare('INSERT INTO users (username, password_hash) VALUES (?, ?)')
-    .run(username, auth.hashPassword(password));
-  auth.setSessionCookie(res, auth.createSession(Number(info.lastInsertRowid)));
-  res.status(201).json({ user: { id: Number(info.lastInsertRowid), username } });
-});
+  // Inserta solo si sigue sin haber usuarios (evita dos registros simultáneos).
+  const info = await db.run(
+    'INSERT INTO users (username, password_hash) SELECT ?, ? WHERE NOT EXISTS (SELECT 1 FROM users)',
+    [username, auth.hashPassword(password)]
+  );
+  if (!info.rowsAffected) return res.status(403).json({ error: 'El registro está cerrado' });
+  const id = Number(info.lastInsertRowid);
+  auth.setSessionCookie(res, await auth.createSession(id));
+  res.status(201).json({ user: { id, username } });
+}));
 
 // Inicio de sesión con usuario y contraseña.
-app.post('/api/auth/login', loginLimiter, (req, res) => {
+app.post('/api/auth/login', loginLimiter, wrap(async (req, res) => {
   const username = String(req.body?.username ?? '').trim();
   const password = String(req.body?.password ?? '');
-  const user = db.prepare('SELECT id, username, password_hash FROM users WHERE username = ?').get(username);
+  const user = await db.get('SELECT id, username, password_hash FROM users WHERE username = ?', [username]);
 
   const ok = auth.verifyPassword(password, user ? user.password_hash : DUMMY_HASH);
   if (!user || !ok) return res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
 
-  auth.setSessionCookie(res, auth.createSession(user.id));
+  auth.setSessionCookie(res, await auth.createSession(user.id));
   res.json({ user: { id: user.id, username: user.username } });
-});
+}));
 
 // Cierre de sesión: borra la sesión del servidor y la cookie del navegador.
-app.post('/api/auth/logout', (req, res) => {
-  auth.destroySession(auth.getToken(req));
+app.post('/api/auth/logout', wrap(async (req, res) => {
+  await auth.destroySession(auth.getToken(req));
   auth.clearSessionCookie(res);
   res.json({ ok: true });
-});
+}));
 
 // Cambio de contraseña (requiere la actual). Cierra las demás sesiones abiertas.
-app.post('/api/auth/password', auth.requireAuth, loginLimiter, (req, res) => {
+app.post('/api/auth/password', auth.requireAuth, loginLimiter, wrap(async (req, res) => {
   const current = String(req.body?.currentPassword ?? '');
   const next = String(req.body?.newPassword ?? '');
-  const row = db.prepare('SELECT password_hash FROM users WHERE id = ?').get(req.user.id);
+  const row = await db.get('SELECT password_hash FROM users WHERE id = ?', [req.user.id]);
 
   if (!auth.verifyPassword(current, row.password_hash)) {
     return res.status(400).json({ error: 'La contraseña actual no es correcta' });
@@ -252,10 +274,10 @@ app.post('/api/auth/password', auth.requireAuth, loginLimiter, (req, res) => {
   if (next.length < 8 || next.length > 200) {
     return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 8 caracteres' });
   }
-  db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(auth.hashPassword(next), req.user.id);
-  auth.destroyUserSessions(req.user.id, auth.getToken(req));
+  await db.run('UPDATE users SET password_hash = ? WHERE id = ?', [auth.hashPassword(next), req.user.id]);
+  await auth.destroyUserSessions(req.user.id, auth.getToken(req));
   res.json({ ok: true });
-});
+}));
 
 /* ================= API administrativa ================= */
 
@@ -264,49 +286,51 @@ const admin = express.Router();
 admin.use(auth.requireAuth);
 
 // Reemplaza el contenido de una sección (validado contra la plantilla de defaults).
-admin.put('/portfolio/:section', (req, res) => {
+admin.put('/portfolio/:section', wrap(async (req, res) => {
   const { section } = req.params;
   if (!Object.hasOwn(defaults, section)) return res.status(404).json({ error: 'Sección desconocida' });
+  let value;
   try {
-    const value = conform(req.body, defaults[section]);
-    saveSection(section, value);
-    res.json({ section, value });
+    value = conform(req.body, defaults[section]);
   } catch (e) {
-    res.status(400).json({ error: e.message });
+    return res.status(400).json({ error: e.message });
   }
-});
+  await saveSection(section, value);
+  res.json({ section, value });
+}));
 
 // Restaura una sección a su contenido original.
-admin.post('/portfolio/:section/reset', (req, res) => {
+admin.post('/portfolio/:section/reset', wrap(async (req, res) => {
   const { section } = req.params;
   if (!Object.hasOwn(defaults, section)) return res.status(404).json({ error: 'Sección desconocida' });
-  saveSection(section, defaults[section]);
+  await saveSection(section, defaults[section]);
   res.json({ section, value: defaults[section] });
-});
+}));
 
 // Bandeja de solicitudes de entrevista (las 500 más recientes).
-admin.get('/messages', (req, res) => {
-  res.json(db.prepare('SELECT id, name, email, mode, duration, is_read, created_at FROM messages ORDER BY id DESC LIMIT 500').all());
-});
+admin.get('/messages', wrap(async (req, res) => {
+  const rows = await db.all('SELECT id, name, email, mode, duration, is_read, created_at FROM messages ORDER BY id DESC LIMIT 500');
+  res.json(rows.map((r) => ({ ...r })));
+}));
 
 // Marca una solicitud como leída / no leída.
-admin.patch('/messages/:id', (req, res) => {
+admin.patch('/messages/:id', wrap(async (req, res) => {
   const read = req.body?.is_read ? 1 : 0;
-  db.prepare('UPDATE messages SET is_read = ? WHERE id = ?').run(read, Number(req.params.id));
+  await db.run('UPDATE messages SET is_read = ? WHERE id = ?', [read, Number(req.params.id)]);
   res.json({ ok: true });
-});
+}));
 
 // Elimina una solicitud.
-admin.delete('/messages/:id', (req, res) => {
-  db.prepare('DELETE FROM messages WHERE id = ?').run(Number(req.params.id));
+admin.delete('/messages/:id', wrap(async (req, res) => {
+  await db.run('DELETE FROM messages WHERE id = ?', [Number(req.params.id)]);
   res.json({ ok: true });
-});
+}));
 
 // Estadísticas de visitas del periodo pedido (7, 30 o 90 días).
-admin.get('/stats', (req, res) => {
+admin.get('/stats', wrap(async (req, res) => {
   const days = [7, 30, 90].includes(Number(req.query.days)) ? Number(req.query.days) : 30;
-  res.json(analytics.getStats(days));
-});
+  res.json(await analytics.getStats(days));
+}));
 
 app.use('/api/admin', admin);
 
@@ -326,7 +350,12 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Error interno del servidor' });
 });
 
-app.listen(PORT, () => {
-  console.log(`Portafolio:  http://localhost:${PORT}`);
-  console.log(`Panel admin: http://localhost:${PORT}/admin/`);
-});
+module.exports = app;
+
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Portafolio:  http://localhost:${PORT}`);
+    console.log(`Panel admin: http://localhost:${PORT}/admin/`);
+    console.log(`Base de datos: ${process.env.TURSO_DATABASE_URL ? 'Turso' : 'archivo local data/app.db'}`);
+  });
+}

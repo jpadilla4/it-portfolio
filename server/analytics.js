@@ -10,7 +10,8 @@
  *    del día anterior se borra, así que el hash no se puede revertir ni enlazar
  *    entre días.
  *  - El detalle de cada visita se borra a los 90 días; antes se resume en
- *    `daily_stats` (visitas y visitantes por día), que sí se conserva.
+ *    `daily_stats` (visitas y visitantes por día), que sí se conserva. La
+ *    limpieza se hace al registrar la primera visita de cada día.
  *
  * No se cuentan los bots ni las visitas con una sesión del panel abierta.
  */
@@ -52,14 +53,10 @@ function addDays(day, n) {
   return d.toISOString().slice(0, 10);
 }
 
-/** Devuelve la sal del día (la crea si no existe) y borra las anteriores. */
-function saltFor(day) {
-  const row = db.prepare('SELECT salt FROM analytics_salts WHERE day = ?').get(day);
-  if (row) return row.salt;
-  const salt = crypto.randomBytes(16).toString('hex');
-  db.prepare('INSERT OR IGNORE INTO analytics_salts (day, salt) VALUES (?, ?)').run(day, salt);
-  db.prepare('DELETE FROM analytics_salts WHERE day < ?').run(day);
-  return db.prepare('SELECT salt FROM analytics_salts WHERE day = ?').get(day).salt;
+/** Devuelve la sal del día (la crea si no existe). */
+async function saltFor(day) {
+  await db.run('INSERT OR IGNORE INTO analytics_salts (day, salt) VALUES (?, ?)', [day, crypto.randomBytes(16).toString('hex')]);
+  return (await db.get('SELECT salt FROM analytics_salts WHERE day = ?', [day])).salt;
 }
 
 /**
@@ -85,72 +82,79 @@ function deviceOf(ua) {
 }
 
 /**
- * Registra una página vista del sitio público.
- * @returns {boolean} `true` si se contó; `false` si era un bot o el administrador.
+ * Resume en `daily_stats` y borra el detalle de más de 90 días; borra sales
+ * de días anteriores y contadores de intentos vencidos.
  */
-function record(req, body = {}) {
+async function purge() {
+  const cutoff = addDays(today(), -RETENTION_DAYS);
+  await db.batch([
+    [`INSERT INTO daily_stats (day, views, visitors)
+      SELECT day, COUNT(*), COUNT(DISTINCT visitor) FROM pageviews WHERE day < ? GROUP BY day
+      ON CONFLICT(day) DO UPDATE SET views = views + excluded.views, visitors = visitors + excluded.visitors`, [cutoff]],
+    ['DELETE FROM pageviews WHERE day < ?', [cutoff]],
+    ['DELETE FROM analytics_salts WHERE day < ?', [today()]],
+    ['DELETE FROM rate_limits WHERE reset_at < ?', [Date.now()]]
+  ]);
+}
+
+// Día de la última limpieza en esta instancia: se limpia como mucho una vez
+// al día por instancia (en Vercel no hay temporizadores de larga duración).
+let lastPurge = '';
+
+/**
+ * Registra una página vista del sitio público.
+ * @returns {Promise<boolean>} `true` si se contó; `false` si era un bot o el administrador.
+ */
+async function record(req, body = {}) {
   const ua = String(req.headers['user-agent'] || '');
   if (!ua || BOT_RE.test(ua)) return false;
-  if (auth.getUserFromRequest(req)) return false;
+  if (await auth.getUserFromRequest(req)) return false;
 
   const day = today();
-  const visitor = crypto.createHash('sha256').update(`${saltFor(day)}|${req.ip}|${ua}`).digest('hex').slice(0, 32);
+  if (lastPurge !== day) {
+    lastPurge = day;
+    await purge();
+  }
+  const visitor = crypto.createHash('sha256').update(`${await saltFor(day)}|${req.ip}|${ua}`).digest('hex').slice(0, 32);
   const lang = ['es', 'en'].includes(body.lang) ? body.lang : 'es';
   const source = classifySource(String(body.referrer || ''), String(body.ref || '').trim(), req.headers.host);
 
-  db.prepare('INSERT INTO pageviews (day, visitor, source, device, lang) VALUES (?, ?, ?, ?, ?)')
-    .run(day, visitor, source, deviceOf(ua), lang);
+  await db.run('INSERT INTO pageviews (day, visitor, source, device, lang) VALUES (?, ?, ?, ?, ?)',
+    [day, visitor, source, deviceOf(ua), lang]);
   return true;
-}
-
-/** Resume en `daily_stats` y borra el detalle de más de 90 días; borra sales viejas. */
-function purge() {
-  const cutoff = addDays(today(), -RETENTION_DAYS);
-  db.exec('BEGIN');
-  try {
-    db.prepare(
-      `INSERT INTO daily_stats (day, views, visitors)
-       SELECT day, COUNT(*), COUNT(DISTINCT visitor) FROM pageviews WHERE day < ? GROUP BY day
-       ON CONFLICT(day) DO UPDATE SET views = views + excluded.views, visitors = visitors + excluded.visitors`
-    ).run(cutoff);
-    db.prepare('DELETE FROM pageviews WHERE day < ?').run(cutoff);
-    db.prepare('DELETE FROM analytics_salts WHERE day < ?').run(today());
-    db.exec('COMMIT');
-  } catch (e) {
-    db.exec('ROLLBACK');
-    throw e;
-  }
 }
 
 /**
  * Estadísticas para el panel.
  * @param {number} days Días del periodo (7, 30 o 90).
  */
-function getStats(days) {
+async function getStats(days) {
   const end = today();
   const start = addDays(end, -(days - 1));
 
-  const perDay = new Map(
-    db.prepare('SELECT day, COUNT(*) AS views, COUNT(DISTINCT visitor) AS visitors FROM pageviews WHERE day >= ? GROUP BY day')
-      .all(start).map((r) => [r.day, r])
-  );
+  // Desgloses: cuenta visitantes (día + hash), no recargas de página.
+  const breakdown = async (col) => (await db.all(
+    `SELECT ${col} AS label, COUNT(DISTINCT day || visitor) AS visitors FROM pageviews
+     WHERE day >= ? GROUP BY ${col} ORDER BY visitors DESC LIMIT 10`,
+    [start]
+  )).map((r) => ({ label: r.label, visitors: r.visitors }));
+
+  const [daily, sources, devices, langs, archived, live] = await Promise.all([
+    db.all('SELECT day, COUNT(*) AS views, COUNT(DISTINCT visitor) AS visitors FROM pageviews WHERE day >= ? GROUP BY day', [start]),
+    breakdown('source'),
+    breakdown('device'),
+    breakdown('lang'),
+    db.get('SELECT COALESCE(SUM(views), 0) AS views, COALESCE(SUM(visitors), 0) AS visitors FROM daily_stats'),
+    db.get('SELECT COUNT(*) AS views, (SELECT COALESCE(SUM(n), 0) FROM (SELECT COUNT(DISTINCT visitor) AS n FROM pageviews GROUP BY day)) AS visitors FROM pageviews')
+  ]);
+
+  const perDay = new Map(daily.map((r) => [r.day, r]));
   const series = [];
   for (let d = start; d <= end; d = addDays(d, 1)) {
     const r = perDay.get(d);
     series.push({ day: d, views: r ? r.views : 0, visitors: r ? r.visitors : 0 });
   }
   const sum = (key) => series.reduce((n, r) => n + r[key], 0);
-
-  // Desgloses: cuenta visitantes (día + hash), no recargas de página.
-  const breakdown = (col) => db.prepare(
-    `SELECT ${col} AS label, COUNT(DISTINCT day || visitor) AS visitors FROM pageviews
-     WHERE day >= ? GROUP BY ${col} ORDER BY visitors DESC LIMIT 10`
-  ).all(start);
-
-  const archived = db.prepare('SELECT COALESCE(SUM(views), 0) AS views, COALESCE(SUM(visitors), 0) AS visitors FROM daily_stats').get();
-  const live = db.prepare(
-    'SELECT COUNT(*) AS views, (SELECT COALESCE(SUM(n), 0) FROM (SELECT COUNT(DISTINCT visitor) AS n FROM pageviews GROUP BY day)) AS visitors FROM pageviews'
-  ).get();
   const todayRow = series[series.length - 1];
 
   return {
@@ -160,14 +164,10 @@ function getStats(days) {
     period: { views: sum('views'), visitors: sum('visitors') },
     allTime: { views: archived.views + live.views, visitors: archived.visitors + live.visitors },
     series,
-    sources: breakdown('source'),
-    devices: breakdown('device'),
-    langs: breakdown('lang')
+    sources,
+    devices,
+    langs
   };
 }
-
-// Limpieza al arrancar y cada 6 horas (sin impedir que el proceso termine).
-purge();
-setInterval(purge, 6 * 60 * 60 * 1000).unref();
 
 module.exports = { record, getStats };

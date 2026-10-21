@@ -9,7 +9,8 @@
  *    y en la base de datos se guarda únicamente su hash SHA-256.
  *  - Cookie HttpOnly + SameSite=Strict (+ Secure en producción).
  *  - Protección CSRF básica comparando el encabezado Origin con el Host.
- *  - Límite de intentos por IP para frenar fuerza bruta.
+ *  - Límite de intentos por IP para frenar fuerza bruta (guardado en la base
+ *    de datos para que funcione aunque haya varias instancias del servidor).
  */
 
 const crypto = require('crypto');
@@ -54,12 +55,12 @@ const sha256 = (v) => crypto.createHash('sha256').update(v).digest('hex');
 /**
  * Crea una sesión nueva para un usuario.
  * @param {number} userId Id del usuario.
- * @returns {string} Token en claro que se enviará al navegador en la cookie.
+ * @returns {Promise<string>} Token en claro que se enviará al navegador en la cookie.
  */
-function createSession(userId) {
+async function createSession(userId) {
   const token = crypto.randomBytes(32).toString('hex');
-  db.prepare('INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (?, ?, ?)')
-    .run(sha256(token), userId, Date.now() + SESSION_TTL_MS);
+  await db.run('INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (?, ?, ?)',
+    [sha256(token), userId, Date.now() + SESSION_TTL_MS]);
   return token;
 }
 
@@ -67,8 +68,8 @@ function createSession(userId) {
  * Elimina una sesión (cierre de sesión).
  * @param {string|null} token Token de la cookie.
  */
-function destroySession(token) {
-  if (token) db.prepare('DELETE FROM sessions WHERE token_hash = ?').run(sha256(token));
+async function destroySession(token) {
+  if (token) await db.run('DELETE FROM sessions WHERE token_hash = ?', [sha256(token)]);
 }
 
 /**
@@ -77,9 +78,9 @@ function destroySession(token) {
  * @param {number} userId Id del usuario.
  * @param {string} [exceptToken] Token de la sesión que debe conservarse.
  */
-function destroyUserSessions(userId, exceptToken) {
+async function destroyUserSessions(userId, exceptToken) {
   const keep = exceptToken ? sha256(exceptToken) : '';
-  db.prepare('DELETE FROM sessions WHERE user_id = ? AND token_hash != ?').run(userId, keep);
+  await db.run('DELETE FROM sessions WHERE user_id = ? AND token_hash != ?', [userId, keep]);
 }
 
 /**
@@ -105,18 +106,19 @@ function getToken(req) {
 /**
  * Devuelve el usuario autenticado de la petición, o `null` si no hay sesión
  * válida. Si la sesión expiró, la elimina.
- * @returns {{id:number, username:string}|null}
+ * @returns {Promise<{id:number, username:string}|null>}
  */
-function getUserFromRequest(req) {
+async function getUserFromRequest(req) {
   const token = getToken(req);
   if (!token) return null;
-  const row = db.prepare(
+  const row = await db.get(
     `SELECT u.id, u.username, s.expires_at FROM sessions s
-     JOIN users u ON u.id = s.user_id WHERE s.token_hash = ?`
-  ).get(sha256(token));
+     JOIN users u ON u.id = s.user_id WHERE s.token_hash = ?`,
+    [sha256(token)]
+  );
   if (!row) return null;
   if (row.expires_at < Date.now()) {
-    destroySession(token);
+    await destroySession(token);
     return null;
   }
   return { id: row.id, username: row.username };
@@ -124,7 +126,7 @@ function getUserFromRequest(req) {
 
 /** Envía la cookie de sesión (HttpOnly, SameSite=Strict, Secure en producción). */
 function setSessionCookie(res, token) {
-  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+  const secure = process.env.NODE_ENV === 'production' || process.env.VERCEL ? '; Secure' : '';
   res.setHeader(
     'Set-Cookie',
     `${COOKIE_NAME}=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${SESSION_TTL_MS / 1000}${secure}`
@@ -142,11 +144,15 @@ function clearSessionCookie(res) {
  * Middleware: exige una sesión válida; si no, responde 401.
  * Deja el usuario en `req.user`.
  */
-function requireAuth(req, res, next) {
-  const user = getUserFromRequest(req);
-  if (!user) return res.status(401).json({ error: 'No autenticado' });
-  req.user = user;
-  next();
+async function requireAuth(req, res, next) {
+  try {
+    const user = await getUserFromRequest(req);
+    if (!user) return res.status(401).json({ error: 'No autenticado' });
+    req.user = user;
+    next();
+  } catch (e) {
+    next(e);
+  }
 }
 
 /** Protección CSRF básica: el Origin (si existe) debe coincidir con el Host. */
@@ -166,29 +172,33 @@ function sameOrigin(req, res, next) {
 }
 
 /**
- * Fábrica de un limitador de intentos en memoria, por IP.
- * @param {{windowMs:number, max:number, message:string}} opciones
- *   `windowMs`: duración de la ventana; `max`: intentos permitidos en la
- *   ventana; `message`: texto del error 429.
+ * Fábrica de un limitador de intentos por IP, guardado en la base de datos.
+ * @param {{name:string, windowMs:number, max:number, message:string}} opciones
+ *   `name`: identifica al limitador; `windowMs`: duración de la ventana;
+ *   `max`: intentos permitidos en la ventana; `message`: texto del error 429.
  * @returns {Function} Middleware de Express.
  */
-function rateLimit({ windowMs, max, message }) {
-  const hits = new Map();
-  return (req, res, next) => {
-    const now = Date.now();
-    const key = req.ip;
-    const entry = hits.get(key) || { count: 0, reset: now + windowMs };
-    if (now > entry.reset) {
-      entry.count = 0;
-      entry.reset = now + windowMs;
+function rateLimit({ name, windowMs, max, message }) {
+  return async (req, res, next) => {
+    try {
+      const now = Date.now();
+      // Suma un intento o reinicia el contador si la ventana ya terminó.
+      const row = await db.get(
+        `INSERT INTO rate_limits (key, count, reset_at) VALUES (?, 1, ?)
+         ON CONFLICT(key) DO UPDATE SET
+           count    = CASE WHEN reset_at < ? THEN 1 ELSE count + 1 END,
+           reset_at = CASE WHEN reset_at < ? THEN excluded.reset_at ELSE reset_at END
+         RETURNING count, reset_at`,
+        [`${name}:${req.ip}`, now + windowMs, now, now]
+      );
+      if (row.count > max) {
+        res.setHeader('Retry-After', Math.ceil((row.reset_at - now) / 1000));
+        return res.status(429).json({ error: message });
+      }
+      next();
+    } catch (e) {
+      next(e);
     }
-    entry.count += 1;
-    hits.set(key, entry);
-    if (entry.count > max) {
-      res.setHeader('Retry-After', Math.ceil((entry.reset - now) / 1000));
-      return res.status(429).json({ error: message });
-    }
-    next();
   };
 }
 
