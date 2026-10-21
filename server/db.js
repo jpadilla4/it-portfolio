@@ -18,6 +18,7 @@
  *  - portfolio:   una fila por sección del portafolio con su contenido en JSON.
  *  - messages:    solicitudes de entrevista enviadas desde el formulario público.
  *  - rate_limits: contadores de intentos por IP (sirven aunque haya varias instancias).
+ *  - images:      imágenes de los proyectos subidas desde el panel (ya comprimidas).
  *  - pageviews, daily_stats, analytics_salts: estadísticas de visitas (ver analytics.js).
  */
 
@@ -72,6 +73,12 @@ const SCHEMA = [
     key      TEXT PRIMARY KEY,
     count    INTEGER NOT NULL,
     reset_at INTEGER NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS images (
+    id         TEXT PRIMARY KEY,       -- hash del contenido (evita duplicados)
+    mime       TEXT NOT NULL,
+    data       BLOB NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
   )`,
   // Una fila por página vista (detalle de los últimos 90 días).
   `CREATE TABLE IF NOT EXISTS pageviews (

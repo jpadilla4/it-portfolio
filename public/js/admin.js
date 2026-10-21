@@ -114,7 +114,7 @@
    * `{ error }` (bloquea el guardado), un texto de aviso o `null`.
    *
    * Propiedades de un campo: `key`, `label`, `type` (text, textarea, number,
-   * datetime, color, select, checkbox, stringlist, list), `i18n` (texto
+   * datetime, color, select, checkbox, stringlist, images, list), `i18n` (texto
    * bilingüe), `span` (ocupa 2 columnas) y `hint` (ayuda). Los campos
    * `type: 'list'` llevan además `itemFields`, `itemTitle`, `itemLabel` y
    * `newItem` (plantilla del elemento nuevo).
@@ -211,6 +211,36 @@
         if (cur.length > 1) return 'Aviso: hay varios puestos actuales; el contador usará el primero con fecha.';
         if (cur.length === 1 && !cur[0].startDate) return 'Guardado. Aviso: el puesto actual no tiene fecha de inicio, por eso no se muestra el contador.';
         return null;
+      }
+    },
+    {
+      key: 'projects', label: 'Proyectos IA', icon: 'smart_toy',
+      desc: 'Carrusel de proyectos hechos con inteligencia artificial: galería de imágenes, video opcional, descripción y enlaces.',
+      fields: [
+        { key: 'badge', label: 'Etiqueta superior', i18n: true },
+        { key: 'title', label: 'Título de la sección', i18n: true },
+        { key: 'subtitle', label: 'Subtítulo', i18n: true, span: true },
+        {
+          key: 'items', label: 'Proyectos', type: 'list', itemLabel: 'Proyecto',
+          itemTitle: (i) => pick(i.title),
+          newItem: {
+            title: bi('Nuevo proyecto', 'New project'), description: bi(), tech: [],
+            demoUrl: '', codeUrl: '', videoUrl: '', images: []
+          },
+          itemFields: [
+            { key: 'title', label: 'Nombre del proyecto', i18n: true, span: true },
+            { key: 'description', label: 'Descripción', type: 'textarea', rows: 3, i18n: true, span: true, hint: 'Usa **texto** para negrita.' },
+            { key: 'images', label: 'Imágenes (galería)', type: 'images', span: true, hint: 'JPG, PNG o WebP. Se reducen a 1600 px y se comprimen automáticamente. La primera es la portada.' },
+            { key: 'videoUrl', label: 'Video (YouTube o Loom, opcional)', type: 'url', span: true, hint: 'Aparece como la última diapositiva de la galería.' },
+            { key: 'demoUrl', label: 'Enlace "Ver demo" (opcional)', type: 'url' },
+            { key: 'codeUrl', label: 'Enlace "Código" (opcional)', type: 'url' },
+            { key: 'tech', label: 'Tecnologías (una por línea, no se traducen)', type: 'stringlist', rows: 3, span: true }
+          ]
+        }
+      ],
+      validate: (d) => {
+        const bad = d.items.find((i) => i.videoUrl && !/youtu\.?be|loom\.com/i.test(i.videoUrl));
+        return bad ? { error: `El video de "${pick(bad.title)}" debe ser un enlace de YouTube o Loom.` } : null;
       }
     },
     {
@@ -387,6 +417,8 @@
           { class: inputCls, onchange: (e) => set(e.target.value) },
           f.options.map(([v, l]) => h('option', { value: v, selected: obj[f.key] === v }, l))
         );
+      case 'images':
+        return buildImages(obj, f.key, changed);
       case 'checkbox':
         return h(
           'label',
@@ -403,6 +435,85 @@
           oninput: (e) => set(e.target.value)
         });
     }
+  }
+
+  /**
+   * Reduce una imagen a 1600 px como máximo y la comprime en WebP (o JPEG si
+   * el navegador no sabe generar WebP).
+   * @param {File} file Archivo elegido por el usuario.
+   * @returns {Promise<string>} Imagen como data URL.
+   */
+  async function compressImage(file) {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close();
+    const webp = canvas.toDataURL('image/webp', 0.82);
+    return webp.startsWith('data:image/webp') ? webp : canvas.toDataURL('image/jpeg', 0.85);
+  }
+
+  /**
+   * Editor de la galería de un proyecto: miniaturas que se pueden reordenar o
+   * quitar, y un botón para subir imágenes nuevas. Guarda los ids en `obj[key]`.
+   */
+  function buildImages(obj, key, changed) {
+    if (!Array.isArray(obj[key])) obj[key] = [];
+    const wrap = h('div', { class: 'space-y-2' });
+    const status = h('p', { class: 'text-xs font-mono text-graphite-500 hidden' });
+    const input = h('input', { type: 'file', accept: 'image/jpeg,image/png,image/webp', multiple: true, class: 'hidden' });
+
+    const render = () => {
+      const list = obj[key];
+      const grid = h('div', { class: 'grid grid-cols-2 sm:grid-cols-4 gap-2' },
+        list.map((id, i) => {
+          const move = (dir) => () => {
+            const j = i + dir;
+            if (j < 0 || j >= list.length) return;
+            [list[i], list[j]] = [list[j], list[i]];
+            changed(); render();
+          };
+          const btn = (name, label, onclick, extra = '') => h('button', {
+            type: 'button', 'aria-label': label, title: label, onclick,
+            class: `w-7 h-7 rounded-md bg-white/90 hover:bg-white text-graphite-700 flex items-center justify-center shadow-sm ${extra}`
+          }, icon(name, 'text-[16px]'));
+          return h('div', { class: 'relative aspect-video rounded-lg overflow-hidden border border-graphite-200 bg-graphite-100' },
+            h('img', { src: `/api/images/${id}`, alt: `Imagen ${i + 1}`, class: 'w-full h-full object-cover', loading: 'lazy' }),
+            i === 0 ? h('span', { class: 'absolute top-1 left-1 px-1.5 py-0.5 rounded bg-brand-600 text-white text-[10px] font-mono' }, 'PORTADA') : null,
+            h('div', { class: 'absolute bottom-1 right-1 flex gap-1' },
+              i > 0 ? btn('arrow_back', 'Mover a la izquierda', move(-1)) : null,
+              i < list.length - 1 ? btn('arrow_forward', 'Mover a la derecha', move(1)) : null,
+              btn('delete', 'Quitar imagen', () => { list.splice(i, 1); changed(); render(); }, 'hover:!bg-red-50 hover:!text-red-600')));
+        }));
+      const add = h('button', {
+        type: 'button',
+        class: 'w-full py-2 rounded-lg border-2 border-dashed border-graphite-300 text-graphite-600 hover:border-brand-500 hover:text-brand-600 hover:bg-brand-50/40 text-sm font-medium flex items-center justify-center gap-1.5',
+        onclick: () => input.click()
+      }, icon('add_photo_alternate', 'text-[18px]'), 'Subir imágenes');
+      wrap.replaceChildren(list.length ? grid : h('p', { class: 'text-xs text-graphite-400' }, 'Sin imágenes: se mostrará un icono en su lugar.'), add, status, input);
+    };
+
+    input.addEventListener('change', async () => {
+      const files = [...input.files];
+      input.value = '';
+      status.classList.remove('hidden');
+      for (const [n, file] of files.entries()) {
+        status.textContent = `Subiendo ${n + 1} de ${files.length}…`;
+        try {
+          const { id } = await api('POST', '/api/admin/images', { data: await compressImage(file) });
+          if (!obj[key].includes(id)) obj[key].push(id);
+          changed(); render();
+        } catch (e) {
+          toast(`${file.name}: ${e.message}`, 'error');
+        }
+      }
+      status.classList.add('hidden');
+    });
+
+    render();
+    return wrap;
   }
 
   /**

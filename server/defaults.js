@@ -246,6 +246,32 @@ module.exports = {
   },
 
   /* ---------------- Certificaciones (el resume no las lista aún) ---------------- */
+  /* ---------------- Proyectos con IA (carrusel con galería) ---------------- */
+  // `images` guarda ids de imágenes subidas desde el panel (ver /api/images/:id).
+  // `videoUrl` admite enlaces de YouTube o Loom y se muestra como diapositiva.
+  projects: {
+    badge: t('PROYECTOS', 'PROJECTS'),
+    title: t('Proyectos con IA', 'AI Projects'),
+    subtitle: t(
+      'Herramientas y prototipos que he construido con inteligencia artificial',
+      "Tools and prototypes I've built with artificial intelligence"
+    ),
+    items: [
+      {
+        title: t('Portafolio IT con panel administrativo', 'IT Portfolio with Admin Panel'),
+        description: t(
+          'Este mismo sitio: portafolio bilingüe con editor por secciones, estadísticas de visitas anónimas y base de datos en la nube, desarrollado con asistencia de IA.',
+          'This very site: a bilingual portfolio with a section editor, anonymous visit analytics, and a cloud database, built with AI assistance.'
+        ),
+        tech: ['Claude', 'Node.js', 'Express', 'Turso', 'Vercel'],
+        demoUrl: 'https://it-portfolio-taupe.vercel.app',
+        codeUrl: '',
+        videoUrl: '',
+        images: []
+      }
+    ]
+  },
+
   certifications: {
     title: t('Certificaciones', 'Certifications'),
     items: [

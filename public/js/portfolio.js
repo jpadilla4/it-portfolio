@@ -316,6 +316,227 @@
       <div class="space-y-4">${items}</div>`;
   }
 
+  /* ---------- Proyectos con IA ---------- */
+
+  /**
+   * Convierte un enlace de YouTube o Loom en una diapositiva de video.
+   * @param {string} url Enlace pegado en el panel.
+   * @returns {{type:'video', embed:string, thumb:string}|null} `null` si no se reconoce.
+   */
+  function videoSlide(url) {
+    const u = String(url || '').trim();
+    const yt = /(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/.exec(u);
+    if (yt) {
+      return {
+        type: 'video',
+        embed: `https://www.youtube-nocookie.com/embed/${yt[1]}?autoplay=1&rel=0`,
+        thumb: `https://i.ytimg.com/vi/${yt[1]}/hqdefault.jpg`
+      };
+    }
+    const loom = /loom\.com\/(?:share|embed)\/([a-f0-9]{32})/.exec(u);
+    if (loom) return { type: 'video', embed: `https://www.loom.com/embed/${loom[1]}?autoplay=1`, thumb: '' };
+    return null;
+  }
+
+  /** Diapositivas de cada proyecto (imágenes y video) y la que muestra cada tarjeta. */
+  let projectSlides = [];
+  let projectIndex = [];
+
+  /** HTML del contenido de una diapositiva dentro de la tarjeta (miniatura). */
+  function slideThumb(s, alt) {
+    if (s.type === 'img') {
+      return `<img src="${esc(s.src)}" alt="${esc(alt)}" loading="lazy" class="w-full h-full object-cover">`;
+    }
+    return `${s.thumb ? `<img src="${esc(s.thumb)}" alt="${esc(alt)}" loading="lazy" class="w-full h-full object-cover">` : ''}
+      <span class="absolute inset-0 flex items-center justify-center ${s.thumb ? 'bg-graphite-950/30' : 'bg-graphite-900'}">
+        <span class="w-14 h-14 rounded-full bg-white/90 text-graphite-900 flex items-center justify-center shadow-lg">
+          <span class="material-symbols-outlined text-3xl">play_arrow</span>
+        </span>
+      </span>`;
+  }
+
+  /** Vuelve a pintar la zona de imagen de la tarjeta `i` con su diapositiva actual. */
+  function paintProjectMedia(i) {
+    const media = document.querySelector(`[data-project-media="${i}"]`);
+    if (!media) return;
+    const slides = projectSlides[i];
+    const n = projectIndex[i];
+    const title = tr(data.projects.items[i].title);
+    media.querySelector('[data-slot]').innerHTML = slideThumb(slides[n], `${title} — ${t('projects.imageOf', { n: n + 1, total: slides.length })}`);
+    const counter = media.querySelector('[data-counter]');
+    if (counter) counter.textContent = `${n + 1} / ${slides.length}`;
+    media.querySelectorAll('[data-dot]').forEach((d, k) => {
+      d.className = `h-1.5 rounded-full transition-all ${k === n ? 'w-4 bg-white' : 'w-1.5 bg-white/60'}`;
+    });
+  }
+
+  /**
+   * Pinta la sección de proyectos: carrusel horizontal de tarjetas, cada una
+   * con su galería (imágenes + video opcional), descripción, tecnologías y enlaces.
+   * Si no hay proyectos, la sección y sus enlaces del menú se ocultan.
+   * @param {Object} p Sección `projects`.
+   */
+  function renderProjects(p) {
+    const items = p.items;
+    const section = $('proyectos');
+    section.classList.toggle('hidden', !items.length);
+    document.querySelectorAll('[data-projects-link]').forEach((a) => a.classList.toggle('hidden', !items.length));
+    if (!items.length) return;
+
+    projectSlides = items.map((x) => {
+      const slides = x.images.filter((id) => /^[a-f0-9]{24}$/.test(id)).map((id) => ({ type: 'img', src: `/api/images/${id}` }));
+      const video = videoSlide(x.videoUrl);
+      if (video) slides.push(video);
+      return slides;
+    });
+    projectIndex = items.map((_, i) => Math.min(projectIndex[i] || 0, Math.max(0, projectSlides[i].length - 1)));
+
+    const smallBtn = 'w-8 h-8 rounded-full bg-white/90 hover:bg-white text-graphite-800 shadow flex items-center justify-center';
+    const cards = items
+      .map((x, i) => {
+        const slides = projectSlides[i];
+        const many = slides.length > 1;
+        const media = slides.length
+          ? `<div class="relative aspect-video bg-graphite-100 overflow-hidden group" data-project-media="${i}">
+              <button type="button" class="absolute inset-0 w-full h-full cursor-zoom-in" data-action="open" data-project="${i}" aria-label="${esc(t('projects.open'))}">
+                <span data-slot class="block w-full h-full"></span>
+              </button>
+              ${many ? `<span data-counter class="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full bg-graphite-950/70 text-white text-[11px] font-mono pointer-events-none"></span>` : ''}
+              ${slides.some((s) => s.type === 'video') ? `<span class="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full bg-graphite-950/70 text-white text-[11px] font-mono flex items-center gap-1 pointer-events-none"><span class="material-symbols-outlined text-[14px]">play_circle</span>${esc(t('projects.video'))}</span>` : ''}
+              ${
+                many
+                  ? `<button type="button" data-action="prev-slide" data-project="${i}" aria-label="${esc(t('projects.prevImage'))}" class="absolute left-2 top-1/2 -translate-y-1/2 ${smallBtn} sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 transition-opacity"><span class="material-symbols-outlined text-[20px]">chevron_left</span></button>
+                     <button type="button" data-action="next-slide" data-project="${i}" aria-label="${esc(t('projects.nextImage'))}" class="absolute right-2 top-1/2 -translate-y-1/2 ${smallBtn} sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 transition-opacity"><span class="material-symbols-outlined text-[20px]">chevron_right</span></button>
+                     <span class="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 pointer-events-none">${slides.map(() => '<span data-dot></span>').join('')}</span>`
+                  : ''
+              }
+            </div>`
+          : `<div class="aspect-video bg-brand-50 flex items-center justify-center text-brand-600">
+              <span class="material-symbols-outlined text-5xl">smart_toy</span>
+            </div>`;
+        const tech = x.tech.filter((s) => s.trim());
+        // Solo se muestran enlaces http(s) válidos.
+        const isUrl = (u) => /^https?:\/\/\S+$/i.test(u.trim());
+        const links = [
+          isUrl(x.demoUrl) && `<a href="${safeUrl(x.demoUrl)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-brand-600 hover:text-brand-700 font-medium"><span class="material-symbols-outlined text-[18px]">open_in_new</span>${esc(t('projects.demo'))}</a>`,
+          isUrl(x.codeUrl) && `<a href="${safeUrl(x.codeUrl)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-graphite-600 hover:text-graphite-900 font-medium"><span class="material-symbols-outlined text-[18px]">code</span>${esc(t('projects.code'))}</a>`
+        ].filter(Boolean);
+        return `<article class="shrink-0 snap-start w-[85%] sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)] bg-white rounded-xl border border-graphite-200 hover:border-graphite-300 overflow-hidden flex flex-col transition-colors print-avoid">
+          ${media}
+          <div class="p-4 sm:p-5 flex flex-col gap-2.5 flex-1">
+            <h3 class="text-base font-bold text-graphite-900">${esc(tr(x.title))}</h3>
+            <p class="text-sm text-graphite-600 leading-relaxed">${rich(tr(x.description))}</p>
+            ${tech.length ? `<div class="flex flex-wrap gap-1.5 font-mono text-xs text-graphite-600">${tech.map((s) => `<span class="px-2 py-0.5 rounded bg-graphite-100">${esc(s)}</span>`).join('')}</div>` : ''}
+            ${links.length ? `<div class="flex flex-wrap gap-4 text-sm mt-auto pt-1">${links.join('')}</div>` : ''}
+          </div>
+        </article>`;
+      })
+      .join('');
+
+    const navBtn = 'w-9 h-9 rounded-full border border-graphite-200 bg-white hover:bg-graphite-50 text-graphite-700 flex items-center justify-center disabled:opacity-40 disabled:cursor-default';
+    section.innerHTML = `
+      <div class="flex items-end justify-between gap-4 pb-2 border-b border-graphite-200">
+        <div class="min-w-0">
+          <div class="text-xs font-mono font-semibold text-brand-600 tracking-wider">${esc(tr(p.badge))}</div>
+          <h2 class="text-2xl font-bold tracking-tight text-graphite-900">${esc(tr(p.title))}</h2>
+          <p class="text-sm text-graphite-500 mt-1">${esc(tr(p.subtitle))}</p>
+        </div>
+        <div class="flex gap-2 shrink-0" data-track-nav>
+          <button type="button" data-action="track-prev" aria-label="${esc(t('projects.prev'))}" class="${navBtn}"><span class="material-symbols-outlined text-[20px]">chevron_left</span></button>
+          <button type="button" data-action="track-next" aria-label="${esc(t('projects.next'))}" class="${navBtn}"><span class="material-symbols-outlined text-[20px]">chevron_right</span></button>
+        </div>
+      </div>
+      <div id="projects-track" class="flex gap-4 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">${cards}</div>`;
+
+    items.forEach((_, i) => projectSlides[i].length && paintProjectMedia(i));
+    updateTrackNav();
+  }
+
+  /** Activa o desactiva las flechas del carrusel según la posición del desplazamiento. */
+  function updateTrackNav() {
+    const track = $('projects-track');
+    const nav = document.querySelector('[data-track-nav]');
+    if (!track || !nav) return;
+    const overflow = track.scrollWidth > track.clientWidth + 2;
+    nav.classList.toggle('hidden', !overflow);
+    nav.querySelector('[data-action="track-prev"]').disabled = track.scrollLeft <= 2;
+    nav.querySelector('[data-action="track-next"]').disabled = track.scrollLeft + track.clientWidth >= track.scrollWidth - 2;
+  }
+
+  /* ---------- Vista ampliada (lightbox) ---------- */
+
+  /** Proyecto y diapositiva abiertos en la vista ampliada. */
+  let lightbox = { project: 0, slide: 0 };
+
+  /** Pinta la diapositiva actual en la vista ampliada (los videos se reproducen ahí). */
+  function paintLightbox() {
+    const slides = projectSlides[lightbox.project];
+    const s = slides[lightbox.slide];
+    const title = tr(data.projects.items[lightbox.project].title);
+    $('lightbox-media').innerHTML =
+      s.type === 'img'
+        ? `<img src="${esc(s.src)}" alt="${esc(title)}" class="max-w-full max-h-[78vh] rounded-lg object-contain">`
+        : `<div class="w-full aspect-video max-h-[78vh] bg-black rounded-lg"><iframe src="${esc(s.embed)}" title="${esc(title)}" class="w-full h-full rounded-lg" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></div>`;
+    $('lightbox-caption').textContent = `${title} · ${lightbox.slide + 1} / ${slides.length}`;
+    const many = slides.length > 1;
+    document.querySelectorAll('#lightbox [data-lb="prev"], #lightbox [data-lb="next"]').forEach((b) => b.classList.toggle('hidden', !many));
+  }
+
+  /** Avanza `dir` diapositivas (con vuelta al principio/final) en la vista ampliada. */
+  function stepLightbox(dir) {
+    const total = projectSlides[lightbox.project].length;
+    lightbox.slide = (lightbox.slide + dir + total) % total;
+    paintLightbox();
+  }
+
+  /** Registra los eventos del carrusel y de la vista ampliada (una sola vez). */
+  function initProjects() {
+    const section = $('proyectos');
+    section.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      const i = Number(btn.dataset.project);
+      const track = $('projects-track');
+      switch (btn.dataset.action) {
+        case 'track-prev':
+        case 'track-next': {
+          const card = track.firstElementChild;
+          const step = card ? card.getBoundingClientRect().width + 16 : track.clientWidth;
+          track.scrollBy({ left: btn.dataset.action === 'track-next' ? step : -step });
+          break;
+        }
+        case 'prev-slide':
+        case 'next-slide': {
+          const total = projectSlides[i].length;
+          projectIndex[i] = (projectIndex[i] + (btn.dataset.action === 'next-slide' ? 1 : -1) + total) % total;
+          paintProjectMedia(i);
+          break;
+        }
+        case 'open':
+          lightbox = { project: i, slide: projectIndex[i] };
+          paintLightbox();
+          $('lightbox').showModal();
+          break;
+      }
+    });
+    section.addEventListener('scroll', (e) => { if (e.target.id === 'projects-track') updateTrackNav(); }, true);
+    window.addEventListener('resize', updateTrackNav);
+
+    const dlg = $('lightbox');
+    dlg.addEventListener('click', (e) => {
+      const action = e.target.closest('[data-lb]')?.dataset.lb;
+      if (action === 'close' || e.target === dlg) dlg.close();
+      else if (action === 'prev') stepLightbox(-1);
+      else if (action === 'next') stepLightbox(1);
+    });
+    dlg.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') stepLightbox(-1);
+      if (e.key === 'ArrowRight') stepLightbox(1);
+    });
+    // Al cerrar se vacía el contenido para detener cualquier video en reproducción.
+    dlg.addEventListener('close', () => { $('lightbox-media').innerHTML = ''; });
+  }
+
   /* ---------- Certificaciones y formación ---------- */
 
   /**
@@ -652,6 +873,7 @@
     renderHero(data.profile, clockStart ? current : null);
     renderMetrics(data.metrics, data.skills);
     renderExperience(data.experience);
+    renderProjects(data.projects);
     renderTraining(data.certifications, data.education);
     renderContact(data.contact);
     tick();
@@ -685,6 +907,7 @@
     trackVisit();
     initMenu();
     initLangSwitch();
+    initProjects();
     window.I18N.applyStatic();
     paintLangSwitch();
     try {

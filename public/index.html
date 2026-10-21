@@ -47,6 +47,7 @@
       <nav class="hidden lg:flex items-center gap-1 text-sm font-medium text-graphite-600" data-i18n-aria="nav.aria">
         <a class="px-3 py-1.5 rounded-md hover:text-graphite-900 hover:bg-graphite-100 transition-all" href="#perfil" data-i18n="nav.profile">Perfil</a>
         <a class="px-3 py-1.5 rounded-md hover:text-graphite-900 hover:bg-graphite-100 transition-all" href="#experiencia" data-i18n="nav.experience">Experiencia</a>
+        <a class="px-3 py-1.5 rounded-md hover:text-graphite-900 hover:bg-graphite-100 transition-all" href="#proyectos" data-i18n="nav.projects" data-projects-link>Proyectos</a>
         <a class="px-3 py-1.5 rounded-md hover:text-graphite-900 hover:bg-graphite-100 transition-all" href="#metricas" data-i18n="nav.highlights">Resumen</a>
         <a class="px-3 py-1.5 rounded-md hover:text-graphite-900 hover:bg-graphite-100 transition-all" href="#contacto" data-i18n="nav.contact">Contacto</a>
       </nav>
@@ -86,6 +87,7 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-8 py-3 grid grid-cols-2 gap-2 text-sm font-medium text-graphite-700">
         <a class="px-3 py-2.5 rounded-lg bg-graphite-50 hover:bg-graphite-100" href="#perfil" data-i18n="nav.profile">Perfil</a>
         <a class="px-3 py-2.5 rounded-lg bg-graphite-50 hover:bg-graphite-100" href="#experiencia" data-i18n="nav.experience">Experiencia</a>
+        <a class="px-3 py-2.5 rounded-lg bg-graphite-50 hover:bg-graphite-100" href="#proyectos" data-i18n="nav.projects" data-projects-link>Proyectos</a>
         <a class="px-3 py-2.5 rounded-lg bg-graphite-50 hover:bg-graphite-100" href="#metricas" data-i18n="nav.highlights">Resumen</a>
         <a class="px-3 py-2.5 rounded-lg bg-graphite-50 hover:bg-graphite-100" href="#contacto" data-i18n="nav.contact">Contacto</a>
         <a class="px-3 py-2.5 rounded-lg bg-graphite-50 hover:bg-graphite-100 font-mono text-xs flex items-center gap-1.5 sm:hidden" href="/admin/">
@@ -103,9 +105,29 @@
     <section id="perfil" data-i18n-aria="profile.aria"><div class="skeleton h-96"></div></section>
     <section id="metricas" class="space-y-6" data-i18n-aria="metrics.aria"><div class="skeleton h-72"></div></section>
     <section id="experiencia" class="space-y-6" data-i18n-aria="experience.aria"><div class="skeleton h-96"></div></section>
+    <section id="proyectos" class="space-y-6 scroll-mt-24" data-i18n-aria="projects.aria"></section>
     <section id="formacion" class="grid grid-cols-1 md:grid-cols-2 gap-6" data-i18n-aria="training.aria"></section>
     <section id="contacto" class="bg-white rounded-2xl border border-graphite-200 p-6 sm:p-10 lg:p-12 shadow-sm" data-i18n-aria="contact.aria"></section>
   </main>
+
+  <!-- Vista ampliada de las imágenes y videos de los proyectos -->
+  <dialog id="lightbox" class="p-0 m-auto overflow-hidden w-[min(1100px,94vw)] max-h-[92vh] bg-transparent backdrop:bg-graphite-950/85">
+    <div class="relative flex flex-col items-center gap-3">
+      <button type="button" data-lb="close" data-i18n-aria="projects.close" class="self-end inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+      <div class="relative w-full flex items-center justify-center">
+        <button type="button" data-lb="prev" data-i18n-aria="projects.prevImage" class="absolute left-2 z-10 inline-flex items-center justify-center w-11 h-11 rounded-full bg-graphite-950/60 hover:bg-graphite-950/80 text-white shadow-lg">
+          <span class="material-symbols-outlined">chevron_left</span>
+        </button>
+        <div id="lightbox-media" class="w-full flex items-center justify-center"></div>
+        <button type="button" data-lb="next" data-i18n-aria="projects.nextImage" class="absolute right-2 z-10 inline-flex items-center justify-center w-11 h-11 rounded-full bg-graphite-950/60 hover:bg-graphite-950/80 text-white shadow-lg">
+          <span class="material-symbols-outlined">chevron_right</span>
+        </button>
+      </div>
+      <p id="lightbox-caption" class="text-sm text-white/80 font-mono text-center"></p>
+    </div>
+  </dialog>
 
   <!-- ============ Pie de página ============ -->
   <footer class="w-full bg-white border-t border-graphite-200 py-8 mt-16 text-xs text-graphite-500 font-mono">

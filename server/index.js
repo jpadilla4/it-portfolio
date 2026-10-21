@@ -4,9 +4,9 @@
  * Servidor Express del portafolio.
  *
  * Responsabilidades:
- *  - API pública:         GET /api/portfolio, POST /api/contact y POST /api/track.
+ *  - API pública:         GET /api/portfolio, GET /api/images/:id, POST /api/contact y POST /api/track.
  *  - Autenticación:       registro (solo la primera cuenta), login, logout y cambio de contraseña.
- *  - API administrativa:  edición de secciones, bandeja de solicitudes y estadísticas.
+ *  - API administrativa:  edición de secciones, subida de imágenes, bandeja de solicitudes y estadísticas.
  *  - Archivos estáticos:  sitio público (`public/`) y panel admin (`public/admin/`).
  *    En Vercel los sirve la plataforma; Express solo atiende `/api/*` (ver api/index.js).
  *
@@ -23,6 +23,7 @@
 // Carga `.env` si existe (en Vercel las variables vienen de la plataforma).
 try { process.loadEnvFile(); } catch { /* sin archivo .env */ }
 
+const crypto = require('crypto');
 const path = require('path');
 const express = require('express');
 const db = require('./db');
@@ -44,7 +45,9 @@ app.use((req, res, next) => {
   res.setHeader('Referrer-Policy', 'same-origin');
   next();
 });
-app.use(express.json({ limit: '200kb' }));
+// Límite general de 200 KB; la subida de imágenes tiene el suyo (ver más abajo).
+const jsonBody = express.json({ limit: '200kb' });
+app.use((req, res, next) => (req.path === '/api/admin/images' ? next() : jsonBody(req, res, next)));
 // Espera a que el esquema de la base de datos esté listo (primera petición tras arrancar).
 app.use((req, res, next) => db.ready.then(() => next(), next));
 app.use('/api', auth.sameOrigin);
@@ -61,6 +64,10 @@ app.use('/api', (req, res, next) => {
 const DUMMY_HASH = auth.hashPassword('dummy-password-for-timing');
 const USERNAME_RE = /^[a-zA-Z0-9_.-]{3,32}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const IMAGE_ID_RE = /^[a-f0-9]{24}$/;
+// Solo formatos de imagen rasterizados (SVG queda fuera: puede contener scripts).
+const IMAGE_TYPES = ['image/webp', 'image/jpeg', 'image/png'];
+const MAX_IMAGE_BYTES = 3 * 1024 * 1024;
 
 /**
  * Envuelve un manejador asíncrono para que sus errores lleguen al manejador
@@ -156,11 +163,33 @@ function saveSection(section, value) {
   );
 }
 
+/**
+ * Borra las imágenes que ya no usa ningún proyecto. Se respetan las subidas
+ * en las últimas 24 h, que pueden pertenecer a un borrador aún sin guardar.
+ * @param {Object} projects Contenido de la sección `projects`.
+ */
+function pruneImages(projects) {
+  const used = [...new Set(projects.items.flatMap((p) => p.images))].filter((id) => IMAGE_ID_RE.test(id));
+  const notIn = used.length ? `AND id NOT IN (${used.map(() => '?').join(',')})` : '';
+  return db.run(`DELETE FROM images WHERE created_at < datetime('now', '-1 day') ${notIn}`, used);
+}
+
 /* ================= API pública ================= */
 
 // Contenido completo del portafolio (todas las secciones, ambos idiomas).
 app.get('/api/portfolio', wrap(async (req, res) => {
   res.json(await getPortfolio());
+}));
+
+// Imagen de un proyecto. El id es el hash del contenido, así que nunca cambia
+// y se puede guardar en caché (navegador y CDN de Vercel) para siempre.
+app.get('/api/images/:id', wrap(async (req, res) => {
+  if (!IMAGE_ID_RE.test(req.params.id)) return res.status(404).json({ error: 'No encontrado' });
+  const row = await db.get('SELECT mime, data FROM images WHERE id = ?', [req.params.id]);
+  if (!row) return res.status(404).json({ error: 'No encontrado' });
+  res.setHeader('Content-Type', row.mime);
+  res.setHeader('Cache-Control', 'public, max-age=31536000, s-maxage=31536000, immutable');
+  res.send(Buffer.from(row.data));
 }));
 
 // Formulario "Solicitar entrevista" del sitio público (máx. 8 envíos/hora por IP).
@@ -296,6 +325,7 @@ admin.put('/portfolio/:section', wrap(async (req, res) => {
     return res.status(400).json({ error: e.message });
   }
   await saveSection(section, value);
+  if (section === 'projects') await pruneImages(value);
   res.json({ section, value });
 }));
 
@@ -304,7 +334,24 @@ admin.post('/portfolio/:section/reset', wrap(async (req, res) => {
   const { section } = req.params;
   if (!Object.hasOwn(defaults, section)) return res.status(404).json({ error: 'Sección desconocida' });
   await saveSection(section, defaults[section]);
+  if (section === 'projects') await pruneImages(defaults[section]);
   res.json({ section, value: defaults[section] });
+}));
+
+// Sube una imagen de proyecto (ya reducida y comprimida en el navegador).
+// Recibe `{ data: "data:image/webp;base64,..." }` y devuelve `{ id }`.
+admin.post('/images', express.json({ limit: '4mb' }), wrap(async (req, res) => {
+  const m = /^data:([\w/+.-]+);base64,([A-Za-z0-9+/=]+)$/.exec(String(req.body?.data ?? ''));
+  if (!m || !IMAGE_TYPES.includes(m[1])) {
+    return res.status(400).json({ error: 'Formato no admitido (usa JPG, PNG o WebP)' });
+  }
+  const bytes = Buffer.from(m[2], 'base64');
+  if (!bytes.length || bytes.length > MAX_IMAGE_BYTES) {
+    return res.status(413).json({ error: 'La imagen es demasiado grande (máx. 3 MB)' });
+  }
+  const id = crypto.createHash('sha256').update(bytes).digest('hex').slice(0, 24);
+  await db.run('INSERT OR IGNORE INTO images (id, mime, data) VALUES (?, ?, ?)', [id, m[1], bytes]);
+  res.status(201).json({ id });
 }));
 
 // Bandeja de solicitudes de entrevista (las 500 más recientes).
