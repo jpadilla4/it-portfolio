@@ -18,6 +18,7 @@
  *  - NODE_ENV:    con `production` la cookie de sesión se marca como Secure.
  *  - TRUST_PROXY: con `1` confía en el proxy inverso para obtener la IP real (automático en Vercel).
  *  - STATS_TZ:    zona horaria de las estadísticas (por defecto America/Puerto_Rico).
+ *  - RESEND_API_KEY, CONTACT_NOTIFY_EMAIL, MAIL_FROM: aviso por correo de solicitudes (ver mailer.js).
  */
 
 // Carga `.env` si existe (en Vercel las variables vienen de la plataforma).
@@ -30,6 +31,7 @@ const db = require('./db');
 const defaults = require('./defaults');
 const auth = require('./auth');
 const analytics = require('./analytics');
+const { sendContactEmail } = require('./mailer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -197,19 +199,30 @@ app.post(
   '/api/contact',
   auth.rateLimit({ name: 'contact', windowMs: 60 * 60 * 1000, max: 8, message: 'Demasiadas solicitudes. Intenta más tarde.' }),
   wrap(async (req, res) => {
-    const { name, email, mode, duration } = req.body || {};
+    const { name, email, mode, duration, message } = req.body || {};
     const clean = (v, max) => String(v ?? '').trim().slice(0, max);
     const data = {
       name: clean(name, 120),
       email: clean(email, 160),
       mode: clean(mode, 40),
-      duration: clean(duration, 40)
+      duration: clean(duration, 40),
+      message: clean(message, 2000)
     };
     if (!data.name) return res.status(400).json({ error: 'El nombre es obligatorio' });
     if (!EMAIL_RE.test(data.email)) return res.status(400).json({ error: 'Email no válido' });
+    if (data.message.length < 10) return res.status(400).json({ error: 'Describe brevemente la empresa y la plaza' });
 
-    await db.run('INSERT INTO messages (name, email, mode, duration) VALUES (?, ?, ?, ?)',
-      [data.name, data.email, data.mode, data.duration]);
+    await db.run('INSERT INTO messages (name, email, mode, duration, message) VALUES (?, ?, ?, ?, ?)',
+      [data.name, data.email, data.mode, data.duration, data.message]);
+
+    // Aviso por correo (si está configurado). Un fallo del correo no pierde la
+    // solicitud: ya quedó guardada y se ve en el panel.
+    try {
+      const contact = (await getPortfolio()).contact;
+      await sendContactEmail(data, contact.email, `${req.protocol}://${req.get('host')}/admin/`);
+    } catch (e) {
+      console.error('No se pudo enviar el aviso por correo:', e.message);
+    }
     res.status(201).json({ ok: true });
   })
 );
@@ -356,7 +369,7 @@ admin.post('/images', express.json({ limit: '4mb' }), wrap(async (req, res) => {
 
 // Bandeja de solicitudes de entrevista (las 500 más recientes).
 admin.get('/messages', wrap(async (req, res) => {
-  const rows = await db.all('SELECT id, name, email, mode, duration, is_read, created_at FROM messages ORDER BY id DESC LIMIT 500');
+  const rows = await db.all('SELECT id, name, email, mode, duration, message, is_read, created_at FROM messages ORDER BY id DESC LIMIT 500');
   res.json(rows.map((r) => ({ ...r })));
 }));
 

@@ -749,7 +749,8 @@
             !m.is_read && h('span', { class: 'w-2 h-2 rounded-full bg-brand-600 shrink-0' }),
             h('span', { class: 'font-bold text-sm truncate' }, m.name)),
           h('a', { href: `mailto:${m.email}`, class: 'text-xs font-mono text-brand-600 hover:underline break-all' }, m.email),
-          h('div', { class: 'text-xs text-graphite-500 mt-1 font-mono' }, `${m.mode || '—'} · ${m.duration || '—'} · ${fmt(m.created_at)}`)),
+          h('div', { class: 'text-xs text-graphite-500 mt-1 font-mono' }, `${m.mode || '—'} · ${m.duration || '—'} · ${fmt(m.created_at)}`),
+          m.message ? h('p', { class: 'text-sm text-graphite-700 mt-2 whitespace-pre-wrap break-words bg-graphite-50 border border-graphite-100 rounded-lg p-3' }, m.message) : null),
         h('div', { class: 'flex items-center gap-2 shrink-0' },
           h('button', {
             type: 'button',

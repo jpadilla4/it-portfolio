@@ -27,6 +27,16 @@ La primera vez, `/admin/` muestra **"Crear cuenta de administrador"**. Al crear 
 2. En **Settings → Environment Variables** añade `TURSO_DATABASE_URL` y `TURSO_AUTH_TOKEN`.
 3. Despliega y crea enseguida la cuenta admin en `/admin/`.
 
+### Aviso por correo de solicitudes (opcional)
+
+Cada solicitud del formulario se guarda en el panel (**Solicitudes**). Para recibir además un correo:
+
+1. Crea una cuenta gratuita en [Resend](https://resend.com) con el correo donde quieres recibir los avisos y genera una API key.
+2. En Vercel añade la variable `RESEND_API_KEY`.
+3. Opcional: `CONTACT_NOTIFY_EMAIL` (destinatario; por defecto el email de la sección Contacto) y `MAIL_FROM` (remitente; por defecto `onboarding@resend.dev`, que solo envía al correo de la cuenta de Resend).
+
+El correo incluye los datos del formulario y, al responderlo, la respuesta va directamente al reclutador.
+
 ## Estructura
 
 | Ruta | Contenido |
@@ -34,6 +44,7 @@ La primera vez, `/admin/` muestra **"Crear cuenta de administrador"**. Al crear 
 | `server/index.js` | API Express (pública, auth, admin) y archivos estáticos |
 | `api/index.js`, `vercel.json` | Función y configuración de Vercel |
 | `server/analytics.js` | Estadísticas de visitas anónimas (sin cookies) |
+| `server/mailer.js` | Aviso por correo de solicitudes (Resend) |
 | `server/auth.js` | Hash scrypt, sesiones por cookie httpOnly, CSRF por Origin, rate limit |
 | `server/db.js` | libSQL: Turso en producción o `data/app.db` en local |
 | `server/defaults.js` | Contenido inicial del portafolio |

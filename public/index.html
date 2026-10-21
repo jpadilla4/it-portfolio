@@ -11,7 +11,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Portafolio | IT Specialist Technician</title>
   <meta name="description" content="Portafolio profesional de TI: experiencia, competencias, formación y contacto.">
-  <meta name="theme-color" content="#ffffff">
+  <meta name="theme-color" content="#ffffff" id="theme-color">
+  <!-- Tema claro/oscuro: se aplica antes de pintar para evitar un destello.
+       Usa la elección guardada o, si no hay, la preferencia del sistema. -->
+  <script>
+    try {
+      var t = localStorage.getItem('portfolio_theme');
+      if (t === 'dark' || (!t && matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+        document.getElementById('theme-color').content = '#0b1120';
+      }
+    } catch (e) { /* sin almacenamiento: tema claro */ }
+  </script>
   <!-- Favicon (logo "JP") e iconos para guardar en la pantalla de inicio -->
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
@@ -66,6 +77,11 @@
           <button type="button" data-lang="en" data-i18n-title="lang.en"
                   class="lang-btn px-2.5 py-1 rounded-md font-semibold transition-colors">EN</button>
         </div>
+        <!-- Modo claro / oscuro -->
+        <button id="theme-toggle" type="button" data-i18n-aria="theme.toggle" data-i18n-title="theme.toggle"
+                class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-graphite-200 bg-white hover:bg-graphite-50 text-graphite-700 transition-colors">
+          <span id="theme-icon" class="material-symbols-outlined text-[20px]">dark_mode</span>
+        </button>
         <!-- Descarga del resume en PDF -->
         <a href="/files/Resume_Jonathan_Padilla.pdf" download
            class="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-graphite-200 bg-white hover:bg-graphite-50 text-graphite-700 font-mono text-xs transition-colors">

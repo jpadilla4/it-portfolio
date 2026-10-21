@@ -66,6 +66,7 @@ const SCHEMA = [
     email      TEXT NOT NULL,
     mode       TEXT,
     duration   TEXT,
+    message    TEXT NOT NULL DEFAULT '',
     is_read    INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   )`,
@@ -119,6 +120,11 @@ const batch = (stmts) => client.batch(stmts.map(([sql, args = []]) => ({ sql, ar
 async function init() {
   await client.execute('PRAGMA foreign_keys = ON');
   await client.batch(SCHEMA, 'write');
+  // Migración: bases de datos creadas antes de que existiera `messages.message`.
+  const cols = (await client.execute('PRAGMA table_info(messages)')).rows.map((r) => r.name);
+  if (!cols.includes('message')) {
+    await client.execute("ALTER TABLE messages ADD COLUMN message TEXT NOT NULL DEFAULT ''");
+  }
   // Sembrar secciones que aún no existan (no sobrescribe ediciones previas)
   // y limpiar sesiones expiradas.
   await batch([

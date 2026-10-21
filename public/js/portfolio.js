@@ -658,7 +658,7 @@
    */
   function renderContact(c) {
     // Guardar valores actuales del formulario (si ya existía) para restaurarlos.
-    const prev = ['cf-name', 'cf-email', 'cf-mode', 'cf-duration'].map((id) => $(id)?.value);
+    const prev = ['cf-name', 'cf-email', 'cf-message'].map((id) => $(id)?.value);
     const prevModeIdx = $('cf-mode')?.selectedIndex ?? 0;
     const prevDurIdx = $('cf-duration')?.selectedIndex ?? 0;
 
@@ -749,6 +749,10 @@
                 <select id="cf-duration" name="duration" class="${inputCls}">${opts(durations, prevDurIdx)}</select>
               </div>
             </div>
+            <div>
+              <label class="block font-mono text-graphite-600 mb-1" for="cf-message">${esc(t('form.message'))}</label>
+              <textarea id="cf-message" name="message" class="${inputCls} leading-relaxed resize-y" rows="4" placeholder="${esc(t('form.messagePh'))}" required minlength="10" maxlength="2000"></textarea>
+            </div>
             <button type="submit" id="cf-submit" class="w-full py-2.5 rounded-lg bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white font-medium text-xs shadow-sm transition-all flex items-center justify-center gap-1.5 mt-2">
               <span>${esc(t('form.submit'))}</span>
               <span class="material-symbols-outlined text-[16px]">send</span>
@@ -761,6 +765,7 @@
     // Restaurar lo escrito antes del cambio de idioma.
     if (prev[0]) $('cf-name').value = prev[0];
     if (prev[1]) $('cf-email').value = prev[1];
+    if (prev[2]) $('cf-message').value = prev[2];
 
     $('contact-form').addEventListener('submit', (ev) => submitContact(ev, c));
   }
@@ -866,6 +871,30 @@
     );
   }
 
+  /* ---------- Tema claro / oscuro ---------- */
+
+  /** Pinta el icono del botón de tema y el color de la barra del navegador móvil. */
+  function paintTheme() {
+    const dark = document.documentElement.classList.contains('dark');
+    $('theme-icon').textContent = dark ? 'light_mode' : 'dark_mode';
+    $('theme-toggle').setAttribute('aria-pressed', String(dark));
+    $('theme-color').content = dark ? '#0b1120' : '#ffffff';
+  }
+
+  /**
+   * Activa el botón de modo oscuro. El tema inicial lo aplica un script en el
+   * <head> (elección guardada o preferencia del sistema); aquí solo se alterna
+   * y se recuerda la elección.
+   */
+  function initTheme() {
+    paintTheme();
+    $('theme-toggle').addEventListener('click', () => {
+      const dark = document.documentElement.classList.toggle('dark');
+      try { localStorage.setItem('portfolio_theme', dark ? 'dark' : 'light'); } catch { /* sin almacenamiento */ }
+      paintTheme();
+    });
+  }
+
   /* ---------- Menú móvil ---------- */
 
   /** Activa el botón hamburguesa del menú móvil/tableta. */
@@ -967,6 +996,7 @@
   async function init() {
     trackVisit();
     initMenu();
+    initTheme();
     initLangSwitch();
     initProjects();
     window.I18N.applyStatic();
